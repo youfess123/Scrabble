@@ -68,7 +68,10 @@ public class Game {
     }
 
     public void nextPlayer() {
+        int oldIndex = currentPlayerIndex;
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        System.out.println("Player changed from index " + oldIndex + " to " + currentPlayerIndex);
+        System.out.println("Current player is now: " + getCurrentPlayer().getName());
     }
 
     public Board getBoard() {
@@ -97,30 +100,40 @@ public class Game {
 
     public boolean executeMove(Move move) {
         if (gameOver) {
+            System.out.println("Game is already over");
             return false;
         }
 
         if (move.getPlayer() != getCurrentPlayer()) {
+            System.out.println("Not this player's turn");
             return false;
         }
 
         boolean success = false;
+        System.out.println("Executing move of type: " + move.getType());
 
-        switch (move.getType()) {
-            case PLACE:
-                success = executePlaceMove(move);
-                break;
+        try {
+            switch (move.getType()) {
+                case PLACE:
+                    success = executePlaceMove(move);
+                    break;
 
-            case EXCHANGE:
-                success = executeExchangeMove(move);
-                break;
+                case EXCHANGE:
+                    success = executeExchangeMove(move);
+                    break;
 
-            case PASS:
-                success = executePassMove(move);
-                break;
+                case PASS:
+                    success = executePassMove(move);
+                    break;
+            }
+        } catch (Exception e) {
+            System.err.println("Error executing move: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
 
         if (success) {
+            System.out.println("Move executed successfully");
             moveHistory.add(move);
 
             // Check if the game is over
@@ -129,7 +142,11 @@ public class Game {
                 return true;
             }
 
+            // Move to next player
             nextPlayer();
+            System.out.println("Turn passed to: " + getCurrentPlayer().getName());
+        } else {
+            System.out.println("Move execution failed");
         }
 
         return success;
@@ -199,32 +216,58 @@ public class Game {
     }
 
     private boolean executeExchangeMove(Move move) {
-        Player player = move.getPlayer();
-        List<Tile> tilesToExchange = move.getTiles();
+        try {
+            Player player = move.getPlayer();
+            List<Tile> tilesToExchange = move.getTiles();
 
-        // Check if there are enough tiles in the bag
-        if (tileBag.getTileCount() < 7) {
+            // Check if there are enough tiles in the bag (at least 1)
+            if (tileBag.getTileCount() < 1) {
+                System.out.println("Not enough tiles in bag: " + tileBag.getTileCount());
+                return false;
+            }
+
+            // Create a copy of the tiles to exchange
+            List<Tile> tilesToRemove = new ArrayList<>(tilesToExchange);
+
+            // Log before removal
+            System.out.println("Before removal - Rack size: " + player.getRack().size());
+            System.out.println("Tiles to exchange: " + tilesToRemove.size());
+
+            // Remove the tiles from the player's rack
+            if (!player.getRack().removeTiles(tilesToRemove)) {
+                System.out.println("Failed to remove tiles from rack");
+                return false;
+            }
+
+            // Log after removal
+            System.out.println("After removal - Rack size: " + player.getRack().size());
+
+            // Draw new tiles first - same number as removed
+            int numTilesToDraw = tilesToRemove.size();
+            List<Tile> newTiles = tileBag.drawTiles(numTilesToDraw);
+
+            System.out.println("Drew " + newTiles.size() + " new tiles");
+
+            // Add the new tiles to the player's rack
+            int tilesAdded = player.getRack().addTiles(newTiles);
+
+            System.out.println("Added " + tilesAdded + " tiles to rack");
+
+            // Return the exchanged tiles to the bag and shuffle
+            tileBag.returnTiles(tilesToRemove);
+
+            System.out.println("Returned " + tilesToRemove.size() + " tiles to bag");
+            System.out.println("After exchange - Rack size: " + player.getRack().size());
+
+            // Reset consecutive passes count
+            consecutivePasses = 0;
+
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error in executeExchangeMove: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
-
-        // Remove the tiles from the player's rack
-        if (!player.getRack().removeTiles(tilesToExchange)) {
-            return false;
-        }
-
-        // Draw new tiles first before returning the old ones to the bag
-        List<Tile> newTiles = tileBag.drawTiles(tilesToExchange.size());
-
-        // Add the new tiles to the player's rack
-        player.getRack().addTiles(newTiles);
-
-        // Return the exchanged tiles to the bag and shuffle
-        tileBag.returnTiles(tilesToExchange);
-
-        // Reset consecutive passes count
-        consecutivePasses = 0;
-
-        return true;
     }
 
     private boolean executePassMove(Move move) {

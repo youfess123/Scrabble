@@ -1,6 +1,7 @@
 package edu.leicester.scrabble.view;
 
 import edu.leicester.scrabble.controller.GameController;
+import edu.leicester.scrabble.model.Player;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -134,15 +135,16 @@ public class GameView extends BorderPane {
             exchangeButton = new Button("Exchange Tiles");
             exchangeButton.setOnAction(e -> {
                 if (controller.getTemporaryPlacements().isEmpty()) {
-                    boolean success = controller.exchangeTiles();
-                    if (!success) {
-                        if (controller.getSelectedTiles().isEmpty()) {
-                            showError("No tiles selected. Please select tiles from your rack to exchange.");
-                        } else {
-                            showError("Cannot exchange tiles. There may not be enough tiles left in the bag.");
-                        }
+                    if (controller.getSelectedTiles().isEmpty()) {
+                        showError("No tiles selected. Please select tiles from your rack to exchange.");
                     } else {
-                        showInfo("Tiles exchanged successfully!");
+                        boolean success = controller.exchangeTiles();
+
+                        // We don't need to show feedback here as the controller will now
+                        // display a confirmation dialog that shows the new tiles
+                        if (!success) {
+                            showError("Exchange failed. There may not be enough tiles in the bag.");
+                        }
                     }
                 } else {
                     showError("Please cancel your current placement before exchanging tiles.");
@@ -155,7 +157,7 @@ public class GameView extends BorderPane {
                 if (controller.getTemporaryPlacements().isEmpty()) {
                     boolean success = controller.passTurn();
                     if (success) {
-                        showInfo("Turn passed to next player.");
+                        showInfo("Turn passed to " + controller.getCurrentPlayer().getName() + ".");
                     }
                 } else {
                     showError("Please cancel your current placement before passing.");
@@ -176,6 +178,19 @@ public class GameView extends BorderPane {
             cancelButton.setTooltip(new Tooltip("Cancel your current tile placement and return tiles to your rack"));
             exchangeButton.setTooltip(new Tooltip("Exchange selected tiles for new ones from the bag"));
             passButton.setTooltip(new Tooltip("Pass your turn to the next player"));
+        }
+
+        public void updateButtonStates() {
+            // Enable/disable buttons based on game state
+            Player currentPlayer = controller.getCurrentPlayer();
+            boolean isPlayerTurn = !currentPlayer.isComputer();
+            boolean hasTemporaryPlacements = !controller.getTemporaryPlacements().isEmpty();
+            boolean hasSelectedTiles = !controller.getSelectedTiles().isEmpty();
+
+            playButton.setDisable(!isPlayerTurn || !hasTemporaryPlacements);
+            cancelButton.setDisable(!isPlayerTurn || !hasTemporaryPlacements);
+            exchangeButton.setDisable(!isPlayerTurn || hasTemporaryPlacements || !hasSelectedTiles);
+            passButton.setDisable(!isPlayerTurn || hasTemporaryPlacements);
         }
     }
 

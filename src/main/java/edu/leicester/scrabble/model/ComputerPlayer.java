@@ -33,60 +33,87 @@ public class ComputerPlayer {
     }
 
     public Move generateMove(Game game) {
-        // Get possible moves
-        List<Move> possibleMoves = findPossibleMoves(game);
+        try {
+            System.out.println("Computer player generating move...");
 
-        // If there are no possible moves, either exchange tiles or pass
-        if (possibleMoves.isEmpty()) {
-            return generateFallbackMove(game);
+            // Get possible moves
+            List<Move> possibleMoves = findPossibleMoves(game);
+
+            // If there are no possible moves, either exchange tiles or pass
+            if (possibleMoves.isEmpty()) {
+                System.out.println("Computer: No possible word placements found, trying fallback");
+                return generateFallbackMove(game);
+            }
+
+            // Sort moves by score
+            possibleMoves.sort(Comparator.comparing(Move::getScore).reversed());
+
+            // Select a move based on difficulty level
+            // Higher difficulty levels choose better moves more consistently
+            int selectedIndex;
+
+            switch (difficultyLevel) {
+                case 1: // Easy - Randomly select from all moves
+                    selectedIndex = random.nextInt(possibleMoves.size());
+                    break;
+
+                case 2: // Medium - Select from the top half of moves
+                    selectedIndex = random.nextInt(Math.max(1, possibleMoves.size() / 2));
+                    break;
+
+                case 3: // Hard - Select from the top few moves
+                    selectedIndex = random.nextInt(Math.max(1, Math.min(3, possibleMoves.size())));
+                    break;
+
+                default: // Default to medium
+                    selectedIndex = random.nextInt(Math.max(1, possibleMoves.size() / 2));
+            }
+
+            System.out.println("Computer selected move with score: " + possibleMoves.get(selectedIndex).getScore());
+            return possibleMoves.get(selectedIndex);
+
+        } catch (Exception e) {
+            System.err.println("Error generating computer move: " + e.getMessage());
+            e.printStackTrace();
+
+            // Return a PASS move when something goes wrong
+            return Move.createPassMove(player);
         }
-
-        // Sort moves by score
-        possibleMoves.sort(Comparator.comparing(Move::getScore).reversed());
-
-        // Select a move based on difficulty level
-        // Higher difficulty levels choose better moves more consistently
-        int selectedIndex;
-
-        switch (difficultyLevel) {
-            case 1: // Easy - Randomly select from all moves
-                selectedIndex = random.nextInt(possibleMoves.size());
-                break;
-
-            case 2: // Medium - Select from the top half of moves
-                selectedIndex = random.nextInt(Math.max(1, possibleMoves.size() / 2));
-                break;
-
-            case 3: // Hard - Select from the top few moves
-                selectedIndex = random.nextInt(Math.max(1, Math.min(3, possibleMoves.size())));
-                break;
-
-            default: // Default to medium
-                selectedIndex = random.nextInt(Math.max(1, possibleMoves.size() / 2));
-        }
-
-        return possibleMoves.get(selectedIndex);
     }
 
     private Move generateFallbackMove(Game game) {
-        // If there are enough tiles in the bag, exchange some tiles
-        if (game.getTileBag().getTileCount() >= 7) {
-            // Select random tiles to exchange
-            List<Tile> tilesToExchange = new ArrayList<>();
-            List<Tile> rackTiles = new ArrayList<>(player.getRack().getTiles());
+        try {
+            // If there are enough tiles in the bag, exchange some tiles
+            if (game.getTileBag().getTileCount() >= 7) {
+                System.out.println("Computer: Generating exchange move");
+                // Select random tiles to exchange
+                List<Tile> tilesToExchange = new ArrayList<>();
+                List<Tile> rackTiles = new ArrayList<>(player.getRack().getTiles());
 
-            // Exchange 1-3 tiles based on difficulty
-            int numToExchange = random.nextInt(4 - difficultyLevel) + 1;
-            numToExchange = Math.min(numToExchange, rackTiles.size());
+                // Exchange 1-3 tiles based on difficulty
+                int numToExchange = random.nextInt(4 - difficultyLevel) + 1;
+                numToExchange = Math.min(numToExchange, rackTiles.size());
 
-            for (int i = 0; i < numToExchange; i++) {
-                int index = random.nextInt(rackTiles.size());
-                tilesToExchange.add(rackTiles.remove(index));
+                for (int i = 0; i < numToExchange && !rackTiles.isEmpty(); i++) {
+                    int index = random.nextInt(rackTiles.size());
+                    tilesToExchange.add(rackTiles.remove(index));
+                }
+
+                if (!tilesToExchange.isEmpty()) {
+                    System.out.println("Computer exchanging " + tilesToExchange.size() + " tiles");
+                    return Move.createExchangeMove(player, tilesToExchange);
+                }
             }
 
-            return Move.createExchangeMove(player, tilesToExchange);
-        } else {
-            // Not enough tiles to exchange, so pass
+            // Not enough tiles to exchange or something went wrong, so pass
+            System.out.println("Computer: Generating pass move");
+            return Move.createPassMove(player);
+
+        } catch (Exception e) {
+            System.err.println("Error generating fallback move: " + e.getMessage());
+            e.printStackTrace();
+
+            // Return a PASS move when something goes wrong
             return Move.createPassMove(player);
         }
     }

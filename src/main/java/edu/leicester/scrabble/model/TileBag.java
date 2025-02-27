@@ -74,25 +74,35 @@ public class TileBag {
         Collections.shuffle(tiles, random);
     }
 
-    public Tile drawTile() {
-        if (tiles.isEmpty()) {
-            return null;
-        }
-        return tiles.remove(tiles.size() - 1);
-    }
-
     public void returnTiles(List<Tile> tilesToReturn) {
         if (tilesToReturn == null || tilesToReturn.isEmpty()) {
+            System.out.println("WARNING: No tiles to return to bag");
             return;
         }
 
+        int beforeCount = tiles.size();
+
+        // Add all tiles back to the bag
         this.tiles.addAll(tilesToReturn);
+
+        int afterCount = tiles.size();
+        System.out.println("TileBag: Added " + (afterCount - beforeCount) + " tiles to bag");
+
+        // Shuffle the bag to randomize the tiles
         shuffle();
     }
 
     public List<Tile> drawTiles(int count) {
         List<Tile> drawnTiles = new ArrayList<>();
 
+        if (count <= 0) {
+            System.out.println("WARNING: Tried to draw " + count + " tiles");
+            return drawnTiles;
+        }
+
+        System.out.println("TileBag: Attempting to draw " + count + " tiles. Available: " + tiles.size());
+
+        // Can't draw more tiles than available
         int tilesToDraw = Math.min(count, tiles.size());
 
         for (int i = 0; i < tilesToDraw; i++) {
@@ -102,7 +112,17 @@ public class TileBag {
             }
         }
 
+        System.out.println("TileBag: Drew " + drawnTiles.size() + " tiles. Remaining: " + tiles.size());
+
         return drawnTiles;
+    }
+
+    public Tile drawTile() {
+        if (tiles.isEmpty()) {
+            System.out.println("WARNING: Tile bag is empty");
+            return null;
+        }
+        return tiles.remove(tiles.size() - 1);
     }
 
     public int getTileCount() {

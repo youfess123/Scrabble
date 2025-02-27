@@ -13,60 +13,111 @@ public class Rack {
     }
 
     public boolean addTile(Tile tile) {
-        if (tiles.size() >= RACK_SIZE) {
+        if (tile == null) {
+            System.out.println("WARNING: Attempted to add null tile to rack");
             return false;
         }
-        tiles.add(tile);
-        return true;
+
+        if (tiles.size() >= RACK_SIZE) {
+            System.out.println("WARNING: Cannot add tile, rack is full");
+            return false;
+        }
+
+        boolean result = tiles.add(tile);
+        System.out.println("Rack: Added tile " + tile.getLetter() + ". Rack size now: " + tiles.size());
+        return result;
     }
 
     public int addTiles(List<Tile> tilesToAdd) {
         if (tilesToAdd == null || tilesToAdd.isEmpty()) {
+            System.out.println("WARNING: No tiles to add to rack");
             return 0;
         }
 
+        System.out.println("Rack: Attempting to add " + tilesToAdd.size() + " tiles. Current size: " + tiles.size());
+
         int count = 0;
         for (Tile tile : tilesToAdd) {
+            if (tile == null) {
+                System.out.println("WARNING: Skipping null tile");
+                continue;
+            }
+
             if (addTile(tile)) {
                 count++;
             } else {
-                break;
+                System.out.println("WARNING: Failed to add tile " + tile.getLetter());
+                break;  // Rack is full
             }
         }
 
+        System.out.println("Rack: Added " + count + " tiles. New size: " + tiles.size());
         return count;
     }
 
     public Tile removeTile(int index) {
         if (index < 0 || index >= tiles.size()) {
+            System.out.println("WARNING: Invalid tile index to remove: " + index);
             return null;
         }
-        return tiles.remove(index);
+
+        Tile removed = tiles.remove(index);
+        System.out.println("Rack: Removed tile at index " + index + ". Rack size now: " + tiles.size());
+        return removed;
     }
 
     public boolean removeTile(Tile tile) {
-        return tiles.remove(tile);
+        if (tile == null) {
+            System.out.println("WARNING: Attempting to remove null tile");
+            return false;
+        }
+
+        boolean result = tiles.remove(tile);
+        if (result) {
+            System.out.println("Rack: Removed tile " + tile.getLetter() + ". Rack size now: " + tiles.size());
+        } else {
+            System.out.println("WARNING: Tile " + tile.getLetter() + " not found in rack");
+        }
+        return result;
     }
 
     public boolean removeTiles(List<Tile> tilesToRemove) {
         if (tilesToRemove == null || tilesToRemove.isEmpty()) {
+            System.out.println("WARNING: No tiles to remove");
             return false;
         }
 
+        System.out.println("Rack: Attempting to remove " + tilesToRemove.size() + " tiles. Current size: " + tiles.size());
+
+        // Create a copy of the tiles list to avoid concurrent modification
         List<Tile> currentTiles = new ArrayList<>(tiles);
 
+        // Check if all tiles to remove are in the rack
         for (Tile tileToRemove : tilesToRemove) {
-            if (!currentTiles.contains(tileToRemove)) {
+            if (tileToRemove == null) {
+                System.out.println("WARNING: Null tile in removal list");
                 return false;
             }
+
+            if (!currentTiles.contains(tileToRemove)) {
+                System.out.println("WARNING: Tile " + tileToRemove.getLetter() + " not in rack");
+                return false;
+            }
+
             currentTiles.remove(tileToRemove);
         }
 
+        // All tiles are in the rack, remove them
+        boolean allRemoved = true;
         for (Tile tileToRemove : tilesToRemove) {
-            tiles.remove(tileToRemove);
+            if (!tiles.remove(tileToRemove)) {
+                System.out.println("WARNING: Failed to remove tile " + tileToRemove.getLetter());
+                allRemoved = false;
+            }
         }
 
-        return true;
+        System.out.println("Rack: Removed " + (tiles.size() - currentTiles.size()) + " tiles. New size: " + tiles.size());
+        return allRemoved;
     }
 
     public Tile getTile(int index) {

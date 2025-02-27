@@ -68,9 +68,13 @@ public class GameController {
         boolean success = game.executeMove(move);
 
         if (success) {
+            System.out.println("Move executed: " + move.getType() + " by " + move.getPlayer().getName());
+
             // Clear selections
             selectedTiles.clear();
             selectedPositions.clear();
+            temporaryPlacements.clear();
+            temporaryIndices.clear();
 
             // Notify listeners
             updateBoard();
@@ -86,17 +90,66 @@ public class GameController {
                 return true;
             }
 
-            // Make computer move if needed
+            // If this was a computer move, show what happened
+            if (move.getPlayer().isComputer()) {
+                showComputerMoveInfo(move);
+            }
+
+            // Make computer move if needed (if the next player is a computer)
             makeComputerMoveIfNeeded();
+        } else {
+            System.out.println("Move failed to execute");
         }
 
         return success;
+    }
+
+    private void showComputerMoveInfo(Move move) {
+        String moveInfo = "";
+
+        switch (move.getType()) {
+            case PLACE:
+                moveInfo = "Computer placed tiles to form: " + String.join(", ", move.getFormedWords());
+                moveInfo += "\nScore: " + move.getScore() + " points";
+                break;
+
+            case EXCHANGE:
+                moveInfo = "Computer exchanged " + move.getTiles().size() + " tiles";
+                break;
+
+            case PASS:
+                moveInfo = "Computer passed its turn";
+                break;
+        }
+
+        String finalMoveInfo = moveInfo;
+        Platform.runLater(() -> {
+            try {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.INFORMATION
+                );
+                alert.setTitle("Computer's Move");
+                alert.setHeaderText("Computer has played");
+                alert.setContentText(finalMoveInfo);
+
+                // Show the dialog and wait for it to be closed
+                alert.showAndWait();
+            } catch (Exception e) {
+                System.err.println("Error showing computer move info: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
     }
 
     private void makeComputerMoveIfNeeded() {
         Player currentPlayer = game.getCurrentPlayer();
 
         if (currentPlayer.isComputer()) {
+            System.out.println("Computer's turn - preparing move");
+
+            // Show that it's the computer's turn in the UI
+            updateCurrentPlayer();
+
             // Find the computer player
             com.scrabble.model.ComputerPlayer computerPlayer = null;
             for (com.scrabble.model.ComputerPlayer cp : computerPlayers) {
@@ -113,7 +166,8 @@ public class GameController {
                     @Override
                     protected Move call() throws Exception {
                         // Add a small delay to make it feel more natural
-                        Thread.sleep(1000);
+                        Thread.sleep(1500);
+                        System.out.println("Computer generating move...");
                         return finalComputerPlayer.generateMove(game);
                     }
                 };
@@ -121,12 +175,32 @@ public class GameController {
                 task.setOnSucceeded(event -> {
                     Move move = task.getValue();
                     if (move != null) {
+                        System.out.println("Computer executing move of type: " + move.getType());
                         makeMove(move);
+                    } else {
+                        System.out.println("Computer couldn't generate a move, passing");
+                        Move passMove = Move.createPassMove(currentPlayer);
+                        makeMove(passMove);
                     }
                 });
 
+                task.setOnFailed(event -> {
+                    System.err.println("Computer move generation failed: " + task.getException().getMessage());
+                    task.getException().printStackTrace();
+                    // Create a pass move and execute it
+                    Move passMove = Move.createPassMove(currentPlayer);
+                    makeMove(passMove);
+                });
+
                 executor.submit(task);
+            } else {
+                System.err.println("Computer player not found");
+                // If we can't find a computer player, just pass
+                Move passMove = Move.createPassMove(currentPlayer);
+                makeMove(passMove);
             }
+        } else {
+            System.out.println("It's " + currentPlayer.getName() + "'s turn");
         }
     }
 
@@ -140,32 +214,87 @@ public class GameController {
     }
 
     public boolean exchangeTiles() {
-        if (!gameInProgress || selectedTiles.isEmpty()) {
+        try {
+            // Check game state
+            if (!gameInProgress) {
+                System.out.println("Game not in progress");
+                return false;
+            }
+
+            // Verify we have tiles selected
+            if (selectedTiles.isEmpty()) {
+                System.out.println("No tiles selected");
+                return false;
+            }
+
+            // Check if the tile bag has enough tiles
+            if (game.getTileBag().getTileCount() < 1) {
+                System.out.println("Not enough tiles in bag");
+                return false;
+            }
+
+            System.out.println("Exchanging " + selectedTiles.size() + " tiles");
+
+            // Make a copy of the selected tiles before clearing them
+            List<Tile> tilesToExchange = new ArrayList<>(selectedTiles);
+
+            // Create a move for the exchange
+            Move exchangeMove = Move.createExchangeMove(game.getCurrentPlayer(), tilesToExchange);
+
+            // Store the current player before executing the move
+            Player currentPlayer = game.getCurrentPlayer();
+
+            // Execute the move (this will advance to the next player)
+            boolean success = game.executeMove(exchangeMove);
+
+            if (success) {
+                // Clear selections now that the move has been executed
+                selectedTiles.clear();
+                selectedPositions.clear();
+
+                // Show a confirmation dialog with the updated rack
+                showExchangeConfirmation();
+
+                // Explicitly trigger view updates
+                updateBoard();
+                updateRack();
+                updateCurrentPlayer();
+
+                System.out.println("Exchange successful");
+            } else {
+                System.out.println("Exchange failed");
+            }
+
+            return success;
+        } catch (Exception e) {
+            System.err.println("Error in exchangeTiles: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
+    }
 
-        // Can only exchange if there are at least 7 tiles in the bag
-        if (game.getTileBag().getTileCount() < 7) {
-            return false;
-        }
+    private void showExchangeConfirmation() {
+        // This method will be called in the JavaFX Application Thread
+        Platform.runLater(() -> {
+            try {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.INFORMATION
+                );
+                alert.setTitle("Tiles Exchanged");
+                alert.setHeaderText("Your tiles have been exchanged successfully");
+                alert.setContentText("Your new tiles are now in your rack. The computer's turn will begin when you close this dialog.");
 
-        // Make a copy of the selected tiles before clearing them
-        List<Tile> tilesToExchange = new ArrayList<>(selectedTiles);
+                // Force the UI to update before showing the dialog
+                updateRack();
+                updateBoard();
 
-        // Create a move for the exchange
-        Move exchangeMove = Move.createExchangeMove(game.getCurrentPlayer(), tilesToExchange);
-
-        // Execute the move
-        boolean success = game.executeMove(exchangeMove);
-
-        if (success) {
-            // Clear selections now that the move has been executed
-            selectedTiles.clear();
-            selectedPositions.clear();
-            updateRack();
-        }
-
-        return success;
+                // Show the dialog and wait for it to be closed
+                alert.showAndWait();
+            } catch (Exception e) {
+                System.err.println("Error showing exchange confirmation: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
     }
 
     public boolean selectTileFromRack(int index) {
