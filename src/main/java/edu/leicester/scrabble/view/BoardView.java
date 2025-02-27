@@ -104,10 +104,11 @@ public class BoardView extends GridPane {
                 Tile tempTile = controller.getTemporaryTileAt(row, col);
                 if (tempTile != null) {
                     label.setText(String.valueOf(tempTile.getLetter()));
-                    label.setTextFill(Color.WHITE);
+                    label.setTextFill(Color.BLACK);
                     label.setStyle("-fx-background-color: #FFAA00; -fx-padding: 5; -fx-background-radius: 3;");
                     premiumLabel.setText("");
                     setBackground(new Background(new BackgroundFill(Color.LIGHTYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
+                    setBorder(new Border(new BorderStroke(Color.ORANGE, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(2))));
                     return;
                 }
             }
@@ -118,12 +119,15 @@ public class BoardView extends GridPane {
             if (square.hasTile()) {
                 Tile tile = square.getTile();
                 label.setText(String.valueOf(tile.getLetter()));
-                label.setTextFill(Color.WHITE);
+                label.setTextFill(Color.BLACK);
                 label.setStyle("-fx-background-color: #CD7F32; -fx-padding: 5; -fx-background-radius: 3;");
                 premiumLabel.setText("");
+                setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(0.5))));
             } else {
                 label.setText("");
                 label.setStyle("");
+                setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(0.5))));
+
 
                 switch (square.getSquareType()) {
                     case DOUBLE_LETTER:

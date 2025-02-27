@@ -74,10 +74,12 @@ public class GameController {
             // Clear selections
             selectedTiles.clear();
             selectedPositions.clear();
+
+            // Important: Clear temporary placements AFTER the move is executed successfully
             temporaryPlacements.clear();
             temporaryIndices.clear();
 
-            // Notify listeners
+            // Force a complete board update
             updateBoard();
             updateRack();
             updateCurrentPlayer();
@@ -352,6 +354,7 @@ public class GameController {
 
             // Update the board view
             updateBoard();
+            updateRack();  // Also update rack to show tile as "used"
 
             return true;
         } catch (Exception e) {
@@ -361,34 +364,14 @@ public class GameController {
         }
     }
 
-    /**
-     * Checks if there is a temporarily placed tile at the given position.
-     *
-     * @param row The row
-     * @param col The column
-     * @return True if there is a temporary tile at the position
-     */
     public boolean hasTemporaryTileAt(int row, int col) {
         return temporaryPlacements.containsKey(new Point(row, col));
     }
 
-    /**
-     * Gets the temporarily placed tile at the given position.
-     *
-     * @param row The row
-     * @param col The column
-     * @return The temporary tile at the position, or null if none
-     */
     public Tile getTemporaryTileAt(int row, int col) {
         return temporaryPlacements.get(new Point(row, col));
     }
 
-    /**
-     * Checks if a rack tile is currently placed on the board temporarily.
-     *
-     * @param rackIndex The index of the tile in the rack
-     * @return True if the tile is placed on the board
-     */
     public boolean isTileTemporarilyPlaced(int rackIndex) {
         return temporaryIndices.contains(rackIndex);
     }

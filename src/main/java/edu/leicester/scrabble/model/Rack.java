@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class Rack {
-    public static final int RACK_SIZE = 7; //hahahahahahah
+    public static final int RACK_SIZE = 7;
     private final List<Tile> tiles;
 
     public Rack() {
