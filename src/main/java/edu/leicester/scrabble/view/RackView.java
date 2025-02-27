@@ -25,12 +25,17 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class RackView extends HBox {
 
     private final GameController controller;
+    private List<TileView> tileViews;
 
     public RackView(GameController controller) {
         this.controller = controller;
+        this.tileViews = new ArrayList<>();
 
         setSpacing(10);
         setPadding(new Insets(10));
@@ -45,6 +50,7 @@ public class RackView extends HBox {
 
     public void updateRack() {
         getChildren().clear();
+        tileViews.clear();
 
         Player currentPlayer = controller.getCurrentPlayer();
         if (currentPlayer.isComputer()) {
@@ -70,6 +76,7 @@ public class RackView extends HBox {
                 tileView.select();
             }
 
+            tileViews.add(tileView);
             getChildren().add(tileView);
         }
 
@@ -108,6 +115,8 @@ public class RackView extends HBox {
         private final int index;
         private final Label letterLabel;
         private final Label valueLabel;
+        private boolean isSelected = false;
+        private boolean isDragging = false;
 
         public TileView(Tile tile, int index) {
             this.tile = tile;
@@ -135,20 +144,43 @@ public class RackView extends HBox {
         private void setupEvents() {
             setOnMouseClicked(event -> {
                 controller.selectTileFromRack(index);
+                updateRack(); // Update the entire rack to reflect selection changes
             });
 
             setOnDragDetected(event -> {
-                Dragboard db = startDragAndDrop(TransferMode.MOVE);
-                ClipboardContent content = new ClipboardContent();
-                content.putString(String.valueOf(index));
-                db.setContent(content);
+                // Only allow dragging if the tile is not already placed on the board
+                if (controller.isTileSelected(index)) {
+                    Dragboard db = startDragAndDrop(TransferMode.MOVE);
+                    ClipboardContent content = new ClipboardContent();
+                    content.putString(String.valueOf(index));
+                    db.setContent(content);
+                    isDragging = true;
+                    event.consume();
+                } else {
+                    // First select the tile, then allow dragging on next attempt
+                    controller.selectTileFromRack(index);
+                    updateRack();
+                }
+            });
+
+            setOnDragDone(event -> {
+                isDragging = false;
+                // The tile may have been placed on the board or dropped elsewhere
+                // We'll let the controller handle the selection state
                 event.consume();
             });
         }
 
         public void select() {
+            isSelected = true;
             setBackground(new Background(new BackgroundFill(Color.GOLD, CornerRadii.EMPTY, Insets.EMPTY)));
             setBorder(new Border(new BorderStroke(Color.ORANGE, BorderStrokeStyle.SOLID, new CornerRadii(3), new BorderWidths(2))));
+        }
+
+        public void deselect() {
+            isSelected = false;
+            setBackground(new Background(new BackgroundFill(Color.BURLYWOOD, CornerRadii.EMPTY, Insets.EMPTY)));
+            setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, new CornerRadii(3), BorderWidths.DEFAULT)));
         }
     }
 

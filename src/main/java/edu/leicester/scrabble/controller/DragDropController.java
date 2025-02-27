@@ -1,6 +1,5 @@
 package edu.leicester.scrabble.controller;
 
-
 import edu.leicester.scrabble.model.Move;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
@@ -37,18 +36,11 @@ public class DragDropController {
             try {
                 int tileIndex = Integer.parseInt(db.getString());
 
-                // Select the tile if not already selected
-                if (!gameController.isTileSelected(tileIndex)) {
-                    gameController.selectTileFromRack(tileIndex);
-                }
-
-                // Place the selected tiles
-                Move.Direction direction = isHorizontalPlacement ?
-                        Move.Direction.HORIZONTAL : Move.Direction.VERTICAL;
-
-                success = gameController.placeTiles(row, col, direction);
+                // Place the tile temporarily instead of permanently
+                success = gameController.placeTileTemporarily(tileIndex, row, col);
             } catch (NumberFormatException e) {
                 // Invalid drag data
+                System.out.println("Invalid drag data: " + e.getMessage());
             }
         }
 

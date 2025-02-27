@@ -4,6 +4,7 @@ import edu.leicester.scrabble.controller.GameController;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -94,8 +95,10 @@ public class GameView extends BorderPane {
     }
 
     private class ControlPanel extends HBox {
-
-        // In the ControlPanel class within GameView.java:
+        private final Button playButton;
+        private final Button cancelButton;
+        private final Button exchangeButton;
+        private final Button passButton;
 
         public ControlPanel(GameController controller) {
             setSpacing(10);
@@ -103,33 +106,60 @@ public class GameView extends BorderPane {
             setStyle("-fx-background-color: #e0e0e0; -fx-border-color: #cccccc; -fx-border-radius: 5;");
 
             // Play button
-            Button playButton = new Button("Play Word");
+            playButton = new Button("Play Word");
             playButton.setOnAction(e -> {
                 boolean success = controller.commitPlacement();
                 if (!success) {
-                    showError("Invalid word placement. Please try again.");
+                    // Check if there are any placements at all
+                    if (controller.getTemporaryPlacements().isEmpty()) {
+                        showError("No tiles placed. Please place tiles on the board first.");
+                    } else {
+                        showError("Invalid word placement. Please ensure your tiles form valid English words according to the Scrabble dictionary.");
+                    }
                 }
             });
 
-            // Cancel button (new)
-            Button cancelButton = new Button("Cancel Placement");
+            // Cancel button
+            cancelButton = new Button("Cancel Placement");
             cancelButton.setOnAction(e -> {
-                controller.cancelPlacements();
+                if (!controller.getTemporaryPlacements().isEmpty()) {
+                    controller.cancelPlacements();
+                    showInfo("Placement cancelled. Tiles have been returned to your rack.");
+                } else {
+                    showInfo("No tiles to cancel.");
+                }
             });
 
             // Exchange button
-            Button exchangeButton = new Button("Exchange Tiles");
+            exchangeButton = new Button("Exchange Tiles");
             exchangeButton.setOnAction(e -> {
-                boolean success = controller.exchangeTiles();
-                if (!success) {
-                    showError("Cannot exchange tiles. Make sure you have selected tiles and there are enough tiles in the bag.");
+                if (controller.getTemporaryPlacements().isEmpty()) {
+                    boolean success = controller.exchangeTiles();
+                    if (!success) {
+                        if (controller.getSelectedTiles().isEmpty()) {
+                            showError("No tiles selected. Please select tiles from your rack to exchange.");
+                        } else {
+                            showError("Cannot exchange tiles. There may not be enough tiles left in the bag.");
+                        }
+                    } else {
+                        showInfo("Tiles exchanged successfully!");
+                    }
+                } else {
+                    showError("Please cancel your current placement before exchanging tiles.");
                 }
             });
 
             // Pass button
-            Button passButton = new Button("Pass Turn");
+            passButton = new Button("Pass Turn");
             passButton.setOnAction(e -> {
-                controller.passTurn();
+                if (controller.getTemporaryPlacements().isEmpty()) {
+                    boolean success = controller.passTurn();
+                    if (success) {
+                        showInfo("Turn passed to next player.");
+                    }
+                } else {
+                    showError("Please cancel your current placement before passing.");
+                }
             });
 
             // Add buttons to panel
@@ -140,7 +170,21 @@ public class GameView extends BorderPane {
                 HBox.setHgrow(node, Priority.ALWAYS);
                 ((Button) node).setMaxWidth(Double.MAX_VALUE);
             }
+
+            // Add tooltip text
+            playButton.setTooltip(new Tooltip("Confirm and play the word with your placed tiles"));
+            cancelButton.setTooltip(new Tooltip("Cancel your current tile placement and return tiles to your rack"));
+            exchangeButton.setTooltip(new Tooltip("Exchange selected tiles for new ones from the bag"));
+            passButton.setTooltip(new Tooltip("Pass your turn to the next player"));
         }
+    }
+
+    private void showInfo(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     private void showError(String message) {

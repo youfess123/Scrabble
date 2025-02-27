@@ -81,17 +81,28 @@ public class TileBag {
         return tiles.remove(tiles.size() - 1);
     }
 
-    public List<Tile> drawTiles(int count) {
-        List<Tile> drawnTiles = new ArrayList<>();
-        for (int i = 0; i < count && !tiles.isEmpty(); i++) {
-            drawnTiles.add(drawTile());
+    public void returnTiles(List<Tile> tilesToReturn) {
+        if (tilesToReturn == null || tilesToReturn.isEmpty()) {
+            return;
         }
-        return drawnTiles;
+
+        this.tiles.addAll(tilesToReturn);
+        shuffle();
     }
 
-    public void returnTiles(List<Tile> tiles) {
-        this.tiles.addAll(tiles);
-        shuffle();
+    public List<Tile> drawTiles(int count) {
+        List<Tile> drawnTiles = new ArrayList<>();
+
+        int tilesToDraw = Math.min(count, tiles.size());
+
+        for (int i = 0; i < tilesToDraw; i++) {
+            Tile tile = drawTile();
+            if (tile != null) {
+                drawnTiles.add(tile);
+            }
+        }
+
+        return drawnTiles;
     }
 
     public int getTileCount() {

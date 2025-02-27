@@ -21,6 +21,10 @@ public class Rack {
     }
 
     public int addTiles(List<Tile> tilesToAdd) {
+        if (tilesToAdd == null || tilesToAdd.isEmpty()) {
+            return 0;
+        }
+
         int count = 0;
         for (Tile tile : tilesToAdd) {
             if (addTile(tile)) {
@@ -29,6 +33,7 @@ public class Rack {
                 break;
             }
         }
+
         return count;
     }
 
@@ -44,7 +49,24 @@ public class Rack {
     }
 
     public boolean removeTiles(List<Tile> tilesToRemove) {
-        return tiles.removeAll(tilesToRemove);
+        if (tilesToRemove == null || tilesToRemove.isEmpty()) {
+            return false;
+        }
+
+        List<Tile> currentTiles = new ArrayList<>(tiles);
+
+        for (Tile tileToRemove : tilesToRemove) {
+            if (!currentTiles.contains(tileToRemove)) {
+                return false;
+            }
+            currentTiles.remove(tileToRemove);
+        }
+
+        for (Tile tileToRemove : tilesToRemove) {
+            tiles.remove(tileToRemove);
+        }
+
+        return true;
     }
 
     public Tile getTile(int index) {

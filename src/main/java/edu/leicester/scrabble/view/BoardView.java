@@ -6,11 +6,9 @@ import edu.leicester.scrabble.model.Move;
 import edu.leicester.scrabble.model.Square;
 import edu.leicester.scrabble.model.Tile;
 import edu.leicester.scrabble.util.ScrabbleConstants;
-
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
-import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Background;
@@ -73,6 +71,7 @@ public class BoardView extends GridPane {
         private final int col;
         private final Label label;
         private final Label premiumLabel;
+        private boolean isTemporaryTile = false;
 
         public SquareView(Square square, int row, int col) {
             this.square = square;
@@ -98,6 +97,22 @@ public class BoardView extends GridPane {
         }
 
         public void update() {
+            isTemporaryTile = controller.hasTemporaryTileAt(row, col);
+
+            // Check for temporary placement first
+            if (isTemporaryTile) {
+                Tile tempTile = controller.getTemporaryTileAt(row, col);
+                if (tempTile != null) {
+                    label.setText(String.valueOf(tempTile.getLetter()));
+                    label.setTextFill(Color.WHITE);
+                    label.setStyle("-fx-background-color: #FFAA00; -fx-padding: 5; -fx-background-radius: 3;");
+                    premiumLabel.setText("");
+                    setBackground(new Background(new BackgroundFill(Color.LIGHTYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
+                    return;
+                }
+            }
+
+            // Regular board update
             updateBackground();
 
             if (square.hasTile()) {
@@ -172,28 +187,52 @@ public class BoardView extends GridPane {
         private boolean isValidPlacement(int row, int col) {
             Board board = controller.getBoard();
 
-            // If board is empty, only allow center square
-            if (board.isEmpty()) {
-                return row == Board.SIZE / 2 && col == Board.SIZE / 2;
+            // If square already has a tile or a temporary placement, it's invalid
+            if (board.getSquare(row, col).hasTile() || controller.hasTemporaryTileAt(row, col)) {
+                return false;
             }
 
-            // Otherwise, square must be empty and adjacent to an existing tile
-            return !board.getSquare(row, col).hasTile() && board.hasAdjacentTile(row, col);
-        }
+            // If board is empty, only allow center square
+            if (board.isEmpty() && controller.getTemporaryPlacements().isEmpty()) {
+                // First move in the game must go through the center square
+                return row == ScrabbleConstants.CENTER_SQUARE && col == ScrabbleConstants.CENTER_SQUARE;
+            }
 
-        // In the SquareView class within BoardView.java
-// Modify the setupDropTarget method:
+            // If there are already temporary placements, check if this square is adjacent or in line
+            if (!controller.getTemporaryPlacements().isEmpty()) {
+                return controller.isValidTemporaryPlacement(row, col);
+            }
+
+            // Otherwise, square must be adjacent to an existing tile
+            return board.hasAdjacentTile(row, col);
+        }
 
         private void setupDropTarget() {
             setOnDragOver(event -> {
-                if (event.getGestureSource() != this && !square.hasTile()) {
+                if (event.getGestureSource() != this && isValidPlacement(row, col)) {
                     event.acceptTransferModes(TransferMode.MOVE);
+
+                    // Highlight this square to indicate valid placement
+                    setStyle("-fx-border-color: gold; -fx-border-width: 2;");
+
+                    // If there are already temporary placements, show the direction
+                    if (!controller.getTemporaryPlacements().isEmpty()) {
+                        Move.Direction direction = controller.determineDirection();
+                        if (direction != null) {
+                            // Add a subtle direction indicator
+                            if (direction == Move.Direction.HORIZONTAL) {
+                                setStyle("-fx-border-color: gold; -fx-border-width: 2; -fx-border-radius: 0 0 0 0;");
+                            } else {
+                                setStyle("-fx-border-color: gold; -fx-border-width: 2; -fx-border-radius: 0 0 0 0;");
+                            }
+                        }
+                    }
                 }
                 event.consume();
             });
 
             setOnDragEntered(event -> {
-                if (event.getGestureSource() != this && !square.hasTile()) {
+                if (event.getGestureSource() != this && isValidPlacement(row, col)) {
                     setStyle("-fx-border-color: gold; -fx-border-width: 2;");
                 }
                 event.consume();
@@ -208,13 +247,12 @@ public class BoardView extends GridPane {
                 Dragboard db = event.getDragboard();
                 boolean success = false;
 
-                if (db.hasString() && !square.hasTile()) {
+                if (db.hasString() && isValidPlacement(row, col)) {
                     try {
                         int tileIndex = Integer.parseInt(db.getString());
 
-                        // Call the controller to place the tile
-                        // Just use the basic placeTiles method for now to get it working
-                        success = controller.placeTiles(row, col, Move.Direction.HORIZONTAL);
+                        // Place the tile temporarily rather than permanently
+                        success = controller.placeTileTemporarily(tileIndex, row, col);
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid drag data: " + e.getMessage());
                     }
@@ -224,6 +262,5 @@ public class BoardView extends GridPane {
                 event.consume();
             });
         }
-
     }
 }

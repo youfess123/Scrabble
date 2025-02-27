@@ -212,12 +212,14 @@ public class Game {
             return false;
         }
 
-        // Return the tiles to the bag
-        tileBag.returnTiles(tilesToExchange);
-
-        // Draw new tiles
+        // Draw new tiles first before returning the old ones to the bag
         List<Tile> newTiles = tileBag.drawTiles(tilesToExchange.size());
+
+        // Add the new tiles to the player's rack
         player.getRack().addTiles(newTiles);
+
+        // Return the exchanged tiles to the bag and shuffle
+        tileBag.returnTiles(tilesToExchange);
 
         // Reset consecutive passes count
         consecutivePasses = 0;
