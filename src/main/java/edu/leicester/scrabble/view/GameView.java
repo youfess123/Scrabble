@@ -95,6 +95,8 @@ public class GameView extends BorderPane {
 
     private class ControlPanel extends HBox {
 
+        // In the ControlPanel class within GameView.java:
+
         public ControlPanel(GameController controller) {
             setSpacing(10);
             setPadding(new Insets(10));
@@ -103,8 +105,16 @@ public class GameView extends BorderPane {
             // Play button
             Button playButton = new Button("Play Word");
             playButton.setOnAction(e -> {
-                // TODO: Implement play functionality
-                System.out.println("Play button clicked");
+                boolean success = controller.commitPlacement();
+                if (!success) {
+                    showError("Invalid word placement. Please try again.");
+                }
+            });
+
+            // Cancel button (new)
+            Button cancelButton = new Button("Cancel Placement");
+            cancelButton.setOnAction(e -> {
+                controller.cancelPlacements();
             });
 
             // Exchange button
@@ -123,7 +133,7 @@ public class GameView extends BorderPane {
             });
 
             // Add buttons to panel
-            getChildren().addAll(playButton, exchangeButton, passButton);
+            getChildren().addAll(playButton, cancelButton, exchangeButton, passButton);
 
             // Make buttons equal width
             for (var node : getChildren()) {

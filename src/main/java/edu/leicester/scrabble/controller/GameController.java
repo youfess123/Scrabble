@@ -4,8 +4,11 @@ import edu.leicester.scrabble.model.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 
+import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -18,6 +21,9 @@ public class GameController {
     private List<Tile> selectedTiles;
     private List<Integer> selectedPositions;
     private boolean gameInProgress;
+
+    private Map<Point, Tile> temporaryPlacements = new HashMap<>();
+    private List<Integer> temporaryIndices = new ArrayList<>();
 
     private Runnable boardUpdateListener;
     private Runnable rackUpdateListener;
@@ -186,6 +192,8 @@ public class GameController {
         return selectedPositions.contains(index);
     }
 
+    // In GameController.java, modify the placeTiles method:
+
     public boolean placeTiles(int startRow, int startCol, Move.Direction direction) {
         if (!gameInProgress || selectedTiles.isEmpty()) {
             return false;
@@ -193,11 +201,144 @@ public class GameController {
 
         // Create a place move
         Move placeMove = Move.createPlaceMove(game.getCurrentPlayer(), startRow, startCol, direction);
-        placeMove.addTiles(selectedTiles);
 
-        // TODO: Add logic to calculate formed words and score
+        // Add the selected tiles to the move
+        placeMove.addTiles(new ArrayList<>(selectedTiles));
 
-        return makeMove(placeMove);
+        // Make the move
+        boolean success = makeMove(placeMove);
+
+        return success;
+    }
+
+    public boolean placeTileTemporarily(int tileIndex, int row, int col) {
+        if (!gameInProgress) {
+            return false;
+        }
+
+        Player currentPlayer = game.getCurrentPlayer();
+        Rack rack = currentPlayer.getRack();
+
+        if (tileIndex < 0 || tileIndex >= rack.size()) {
+            return false;
+        }
+
+        // Check if this square already has a temporary tile
+        Point position = new Point(row, col);
+        if (temporaryPlacements.containsKey(position)) {
+            return false;
+        }
+
+        // Get the tile from the rack
+        Tile tile = rack.getTile(tileIndex);
+
+        // Store the temporary placement
+        temporaryPlacements.put(position, tile);
+        temporaryIndices.add(tileIndex);
+
+        // Update the board view (but don't modify the game state yet)
+        updateBoard();
+
+        return true;
+    }
+
+    public boolean commitPlacement() {
+        if (temporaryPlacements.isEmpty()) {
+            return false;
+        }
+
+        // Determine the direction of the placement
+        Move.Direction direction = determineDirection();
+        if (direction == null) {
+            return false; // Invalid placement
+        }
+
+        // Find the starting position
+        int startRow = Integer.MAX_VALUE;
+        int startCol = Integer.MAX_VALUE;
+        for (Point p : temporaryPlacements.keySet()) {
+            startRow = Math.min(startRow, p.x);
+            startCol = Math.min(startCol, p.y);
+        }
+
+        // Create a place move
+        Move placeMove = Move.createPlaceMove(game.getCurrentPlayer(), startRow, startCol, direction);
+
+        // Add the tiles to the move
+        for (Tile tile : temporaryPlacements.values()) {
+            placeMove.addTile(tile);
+        }
+
+        // Validate the move
+        if (!validateWords(placeMove)) {
+            return false; // Invalid words formed
+        }
+
+        // Apply the move
+        boolean success = makeMove(placeMove);
+
+        if (success) {
+            // Clear temporary state
+            temporaryPlacements.clear();
+            temporaryIndices.clear();
+        }
+
+        return success;
+    }
+
+    public void cancelPlacements() {
+        temporaryPlacements.clear();
+        temporaryIndices.clear();
+        updateBoard();
+    }
+
+    /**
+     * Determines the direction of the current placement
+     */
+    private Move.Direction determineDirection() {
+        // Check if all tiles are in the same row
+        boolean sameRow = true;
+        int firstRow = -1;
+
+        // Check if all tiles are in the same column
+        boolean sameCol = true;
+        int firstCol = -1;
+
+        for (Point p : temporaryPlacements.keySet()) {
+            if (firstRow == -1) {
+                firstRow = p.x;
+                firstCol = p.y;
+            } else {
+                if (p.x != firstRow) {
+                    sameRow = false;
+                }
+                if (p.y != firstCol) {
+                    sameCol = false;
+                }
+            }
+        }
+
+        if (sameRow && !sameCol) {
+            return Move.Direction.HORIZONTAL;
+        } else if (!sameRow && sameCol) {
+            return Move.Direction.VERTICAL;
+        } else {
+            // Either all tiles are at the same point or they're scattered
+            return null;
+        }
+    }
+
+    private boolean validateWords(Move move) {
+        // This should use the GADDAG to validate all words formed
+        // For now, we're just returning true as a placeholder
+        return true;
+    }
+
+    private void calculateWords(Move move) {
+        // This would calculate the words formed by the move and set them on the move object
+        // along with the score. For now, we'll just set a placeholder
+        move.setScore(10); // Placeholder score
+        move.addFormedWord("WORD"); // Placeholder word
     }
 
     public Board getBoard() {

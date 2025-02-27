@@ -2,6 +2,7 @@ package edu.leicester.scrabble.view;
 
 import edu.leicester.scrabble.controller.GameController;
 import edu.leicester.scrabble.model.Board;
+import edu.leicester.scrabble.model.Move;
 import edu.leicester.scrabble.model.Square;
 import edu.leicester.scrabble.model.Tile;
 import edu.leicester.scrabble.util.ScrabbleConstants;
@@ -168,6 +169,21 @@ public class BoardView extends GridPane {
             setBackground(new Background(new BackgroundFill(backgroundColor, CornerRadii.EMPTY, Insets.EMPTY)));
         }
 
+        private boolean isValidPlacement(int row, int col) {
+            Board board = controller.getBoard();
+
+            // If board is empty, only allow center square
+            if (board.isEmpty()) {
+                return row == Board.SIZE / 2 && col == Board.SIZE / 2;
+            }
+
+            // Otherwise, square must be empty and adjacent to an existing tile
+            return !board.getSquare(row, col).hasTile() && board.hasAdjacentTile(row, col);
+        }
+
+        // In the SquareView class within BoardView.java
+// Modify the setupDropTarget method:
+
         private void setupDropTarget() {
             setOnDragOver(event -> {
                 if (event.getGestureSource() != this && !square.hasTile()) {
@@ -192,15 +208,22 @@ public class BoardView extends GridPane {
                 Dragboard db = event.getDragboard();
                 boolean success = false;
 
-                if (db.hasString()) {
-                    // TODO: Implement tile placement logic
-                    // The string would contain the tile index from the rack
-                    success = true;
+                if (db.hasString() && !square.hasTile()) {
+                    try {
+                        int tileIndex = Integer.parseInt(db.getString());
+
+                        // Call the controller to place the tile
+                        // Just use the basic placeTiles method for now to get it working
+                        success = controller.placeTiles(row, col, Move.Direction.HORIZONTAL);
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid drag data: " + e.getMessage());
+                    }
                 }
 
                 event.setDropCompleted(success);
                 event.consume();
             });
         }
+
     }
 }

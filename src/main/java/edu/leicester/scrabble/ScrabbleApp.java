@@ -36,7 +36,7 @@ public class ScrabbleApp extends Application {
 
             // Try to load the CSS stylesheet if it exists
             try {
-                String cssResource = "/styles/style.css";
+                String cssResource = "/edu/leicester/scrabble/styles/style.css";
                 if (getClass().getResource(cssResource) != null) {
                     scene.getStylesheets().add(getClass().getResource(cssResource).toExternalForm());
                 } else {
