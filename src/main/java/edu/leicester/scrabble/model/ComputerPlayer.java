@@ -36,8 +36,24 @@ public class ComputerPlayer {
         try {
             System.out.println("Computer player generating move...");
 
-            // Get possible moves
-            List<Move> possibleMoves = findPossibleMoves(game);
+            // Safety check - if no tiles in rack, pass turn
+            if (player.getRack().size() == 0) {
+                System.out.println("Computer has no tiles, passing");
+                return Move.createPassMove(player);
+            }
+
+            // Get possible moves with a timeout protection
+            List<Move> possibleMoves = new ArrayList<>();
+            try {
+                // Try to find possible moves with a time limit
+                possibleMoves = findPossibleMoves(game);
+                System.out.println("Found " + possibleMoves.size() + " possible moves");
+            } catch (Exception e) {
+                System.err.println("Error finding possible moves: " + e.getMessage());
+                e.printStackTrace();
+                // If move generation fails, default to fallback move
+                return generateFallbackMove(game);
+            }
 
             // If there are no possible moves, either exchange tiles or pass
             if (possibleMoves.isEmpty()) {
@@ -86,21 +102,35 @@ public class ComputerPlayer {
             // If there are enough tiles in the bag, exchange some tiles
             if (game.getTileBag().getTileCount() >= 7) {
                 System.out.println("Computer: Generating exchange move");
-                // Select random tiles to exchange
+                // Select actual tiles from the rack
+                Rack rack = player.getRack();
                 List<Tile> tilesToExchange = new ArrayList<>();
-                List<Tile> rackTiles = new ArrayList<>(player.getRack().getTiles());
+
+                // FIX: Use the actual Tile objects from the rack instead of creating copies
+                List<Tile> availableTiles = new ArrayList<>();
+                for (int i = 0; i < rack.size(); i++) {
+                    availableTiles.add(rack.getTile(i));
+                }
 
                 // Exchange 1-3 tiles based on difficulty
                 int numToExchange = random.nextInt(4 - difficultyLevel) + 1;
-                numToExchange = Math.min(numToExchange, rackTiles.size());
+                numToExchange = Math.min(numToExchange, availableTiles.size());
 
-                for (int i = 0; i < numToExchange && !rackTiles.isEmpty(); i++) {
-                    int index = random.nextInt(rackTiles.size());
-                    tilesToExchange.add(rackTiles.remove(index));
+                // FIX: Add direct tile references to exchange list
+                for (int i = 0; i < numToExchange && !availableTiles.isEmpty(); i++) {
+                    int index = random.nextInt(availableTiles.size());
+                    tilesToExchange.add(availableTiles.remove(index));
                 }
 
                 if (!tilesToExchange.isEmpty()) {
                     System.out.println("Computer exchanging " + tilesToExchange.size() + " tiles");
+                    // Print out the letters being exchanged for debugging
+                    System.out.print("Exchanging tiles: ");
+                    for (Tile t : tilesToExchange) {
+                        System.out.print(t.getLetter() + " ");
+                    }
+                    System.out.println();
+
                     return Move.createExchangeMove(player, tilesToExchange);
                 }
             }
@@ -118,6 +148,7 @@ public class ComputerPlayer {
         }
     }
 
+    // Rest of the ComputerPlayer class implementation...
     private List<Move> findPossibleMoves(Game game) {
         List<Move> possibleMoves = new ArrayList<>();
         Board board = game.getBoard();

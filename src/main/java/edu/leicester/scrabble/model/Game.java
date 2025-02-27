@@ -226,15 +226,19 @@ public class Game {
                 return false;
             }
 
-            // Create a copy of the tiles to exchange
-            List<Tile> tilesToRemove = new ArrayList<>(tilesToExchange);
-
             // Log before removal
             System.out.println("Before removal - Rack size: " + player.getRack().size());
-            System.out.println("Tiles to exchange: " + tilesToRemove.size());
+            System.out.println("Tiles to exchange: " + tilesToExchange.size());
+
+            // Log the letters being exchanged (for debugging)
+            StringBuilder exchangeLog = new StringBuilder("Exchanging tiles: ");
+            for (Tile t : tilesToExchange) {
+                exchangeLog.append(t.getLetter()).append(" ");
+            }
+            System.out.println(exchangeLog.toString());
 
             // Remove the tiles from the player's rack
-            if (!player.getRack().removeTiles(tilesToRemove)) {
+            if (!player.getRack().removeTiles(tilesToExchange)) {
                 System.out.println("Failed to remove tiles from rack");
                 return false;
             }
@@ -243,7 +247,7 @@ public class Game {
             System.out.println("After removal - Rack size: " + player.getRack().size());
 
             // Draw new tiles first - same number as removed
-            int numTilesToDraw = tilesToRemove.size();
+            int numTilesToDraw = tilesToExchange.size();
             List<Tile> newTiles = tileBag.drawTiles(numTilesToDraw);
 
             System.out.println("Drew " + newTiles.size() + " new tiles");
@@ -254,9 +258,9 @@ public class Game {
             System.out.println("Added " + tilesAdded + " tiles to rack");
 
             // Return the exchanged tiles to the bag and shuffle
-            tileBag.returnTiles(tilesToRemove);
+            tileBag.returnTiles(tilesToExchange);
 
-            System.out.println("Returned " + tilesToRemove.size() + " tiles to bag");
+            System.out.println("Returned " + tilesToExchange.size() + " tiles to bag");
             System.out.println("After exchange - Rack size: " + player.getRack().size());
 
             // Reset consecutive passes count

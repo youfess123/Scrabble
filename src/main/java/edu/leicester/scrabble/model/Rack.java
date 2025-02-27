@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class Rack {
-    public static final int RACK_SIZE = 7; //hahahahahahahhahah
+    public static final int RACK_SIZE = 7; //hahahahahahah
     private final List<Tile> tiles;
 
     public Rack() {
@@ -89,35 +89,34 @@ public class Rack {
 
         System.out.println("Rack: Attempting to remove " + tilesToRemove.size() + " tiles. Current size: " + tiles.size());
 
-        // Create a copy of the tiles list to avoid concurrent modification
-        List<Tile> currentTiles = new ArrayList<>(tiles);
+        // FIX: Create a copy of tilesToRemove to avoid concurrent modification
+        List<Tile> tilesToRemoveCopy = new ArrayList<>(tilesToRemove);
+        int initialSize = tiles.size();
+        int removedCount = 0;
 
-        // Check if all tiles to remove are in the rack
-        for (Tile tileToRemove : tilesToRemove) {
-            if (tileToRemove == null) {
-                System.out.println("WARNING: Null tile in removal list");
-                return false;
+        // FIX: Iterate over the rack tiles by index and letter to find matching tiles
+        for (Tile tileToRemove : tilesToRemoveCopy) {
+            // Find a tile in the rack with the same letter
+            boolean found = false;
+            for (int i = 0; i < tiles.size(); i++) {
+                Tile rackTile = tiles.get(i);
+                if (rackTile.getLetter() == tileToRemove.getLetter() &&
+                        rackTile.getValue() == tileToRemove.getValue() &&
+                        rackTile.isBlank() == tileToRemove.isBlank()) {
+                    tiles.remove(i);
+                    removedCount++;
+                    found = true;
+                    break;
+                }
             }
 
-            if (!currentTiles.contains(tileToRemove)) {
-                System.out.println("WARNING: Tile " + tileToRemove.getLetter() + " not in rack");
-                return false;
+            if (!found) {
+                System.out.println("WARNING: Could not find matching tile for " + tileToRemove.getLetter());
             }
-
-            currentTiles.remove(tileToRemove);
         }
 
-        // All tiles are in the rack, remove them
-        boolean allRemoved = true;
-        for (Tile tileToRemove : tilesToRemove) {
-            if (!tiles.remove(tileToRemove)) {
-                System.out.println("WARNING: Failed to remove tile " + tileToRemove.getLetter());
-                allRemoved = false;
-            }
-        }
-
-        System.out.println("Rack: Removed " + (tiles.size() - currentTiles.size()) + " tiles. New size: " + tiles.size());
-        return allRemoved;
+        System.out.println("Rack: Removed " + removedCount + " tiles. New size: " + tiles.size());
+        return (removedCount == tilesToRemoveCopy.size());
     }
 
     public Tile getTile(int index) {
