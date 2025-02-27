@@ -1,0 +1,129 @@
+/* Main application styling */
+.root {
+    -fx-font-family: "Arial";
+    -fx-background-color: #f0f0f0;
+}
+
+/* Board styling */
+.board {
+    -fx-border-color: #444;
+    -fx-border-width: 2px;
+    -fx-background-color: #d0d0d0;
+    -fx-padding: 5px;
+}
+
+.square {
+    -fx-border-color: #333;
+    -fx-border-width: 0.5px;
+}
+
+.square-normal {
+    -fx-background-color: #e8dcb5;
+}
+
+.square-dl {
+    -fx-background-color: #add8e6;
+}
+
+.square-tl {
+    -fx-background-color: #0000cd;
+}
+
+.square-dw {
+    -fx-background-color: #ffb6c1;
+}
+
+.square-tw {
+    -fx-background-color: #ff0000;
+}
+
+.square-center {
+    -fx-background-color: #ffb6c1;
+}
+
+/* Tile styling */
+.tile {
+    -fx-background-color: #cd853f;
+    -fx-background-radius: 3px;
+    -fx-border-color: #8b4513;
+    -fx-border-radius: 3px;
+    -fx-border-width: 1px;
+    -fx-padding: 5px;
+}
+
+.tile-letter {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #000;
+}
+
+.tile-value {
+    -fx-font-size: 9px;
+    -fx-text-fill: #000;
+}
+
+.tile-selected {
+    -fx-background-color: #ffd700;
+    -fx-border-color: #ff8c00;
+    -fx-border-width: 2px;
+}
+
+/* Rack styling */
+.rack {
+    -fx-background-color: #e0e0e0;
+    -fx-border-color: #aaa;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 10px;
+}
+
+.empty-slot {
+    -fx-background-color: #fff;
+    -fx-border-color: #ccc;
+    -fx-border-style: dashed;
+    -fx-border-radius: 3px;
+}
+
+/* Game info panel */
+.game-info {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #aaa;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 10px;
+}
+
+.info-header {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.current-player {
+    -fx-text-fill: #00008b;
+    -fx-font-weight: bold;
+}
+
+/* Control panel */
+.control-panel {
+    -fx-background-color: #d8d8d8;
+    -fx-border-color: #bbb;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 10px;
+}
+
+.button {
+    -fx-background-color: #4a6ea9;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 16px;
+    -fx-background-radius: 4px;
+}
+
+.button:hover {
+    -fx-background-color: #5a7eb9;
+}
+
+.button:pressed {
+    -fx-background-color: #3a5e99;
+}
