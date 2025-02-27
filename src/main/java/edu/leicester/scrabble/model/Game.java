@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class Game {
     private final Board board;
@@ -153,18 +154,15 @@ public class Game {
     }
 
     private boolean executePlaceMove(Move move) {
-        // Verify the move is valid
         if (!isValidPlaceMove(move)) {
             return false;
         }
 
-        // Apply the move to the board
         int row = move.getStartRow();
         int col = move.getStartCol();
         Player player = move.getPlayer();
         List<Tile> tilesToPlace = move.getTiles();
 
-        // Place the tiles on the board
         for (Tile tile : tilesToPlace) {
             if (move.getDirection() == Move.Direction.HORIZONTAL) {
                 while (board.getSquare(row, col).hasTile()) {
@@ -180,35 +178,30 @@ public class Game {
                 row++;
             }
 
-            // Remove the tile from the player's rack
             player.getRack().removeTile(tile);
         }
 
-        // Mark premiums as used for all squares in formed words
-        List<String> formedWords = new ArrayList<>(move.getFormedWords());
-        for (String word : formedWords) {
-            for (Square square : getSquaresForWord(word)) {
-                square.useSquareType();
+        Map<String, List<Square>> wordSquaresMap = move.getMetadata("wordSquares");
+        if (wordSquaresMap != null) {
+            for (List<Square> squares : wordSquaresMap.values()) {
+                for (Square square : squares) {
+                    if (tilesToPlace.contains(square.getTile())) {
+                        square.useSquareType();
+                    }
+                }
             }
         }
 
-        // Add the score to the player
         player.addScore(move.getScore());
-
-        // Reset consecutive passes count
         consecutivePasses = 0;
-
-        // Fill the player's rack
         fillRack(player);
 
-        // Check if the player used all tiles for a bonus
         if (player.getRack().isEmpty() && tileBag.isEmpty()) {
             player.addScore(EMPTY_RACK_BONUS);
         }
 
         return true;
     }
-
     private List<Square> getSquaresForWord(String word) {
         // This would need to be implemented based on how words are tracked
         // For now, return an empty list

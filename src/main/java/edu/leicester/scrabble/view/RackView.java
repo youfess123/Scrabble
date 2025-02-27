@@ -53,14 +53,10 @@ public class RackView extends HBox {
         tileViews.clear();
 
         Player currentPlayer = controller.getCurrentPlayer();
-        if (currentPlayer.isComputer()) {
-            displayComputerRack();
-            return;
-        }
+
 
         Rack rack = currentPlayer.getRack();
 
-        // Add player label
         Label playerLabel = new Label("Current Player: " + currentPlayer.getName());
         playerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         playerLabel.setPadding(new Insets(0, 20, 0, 0));
@@ -78,29 +74,6 @@ public class RackView extends HBox {
 
             tileViews.add(tileView);
             getChildren().add(tileView);
-        }
-
-        // Add empty slots
-        for (int i = 0; i < rack.getEmptySlots(); i++) {
-            EmptySlotView emptySlot = new EmptySlotView();
-            getChildren().add(emptySlot);
-        }
-    }
-
-    private void displayComputerRack() {
-        Player computerPlayer = controller.getCurrentPlayer();
-        Rack rack = computerPlayer.getRack();
-
-        // Add player label
-        Label playerLabel = new Label("Computer's Turn");
-        playerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        playerLabel.setPadding(new Insets(0, 20, 0, 0));
-        getChildren().add(playerLabel);
-
-        // Add hidden tiles
-        for (int i = 0; i < rack.size(); i++) {
-            HiddenTileView hiddenTile = new HiddenTileView();
-            getChildren().add(hiddenTile);
         }
 
         // Add empty slots
@@ -181,19 +154,6 @@ public class RackView extends HBox {
             isSelected = false;
             setBackground(new Background(new BackgroundFill(Color.BURLYWOOD, CornerRadii.EMPTY, Insets.EMPTY)));
             setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, new CornerRadii(3), BorderWidths.DEFAULT)));
-        }
-    }
-
-    private class HiddenTileView extends StackPane {
-        public HiddenTileView() {
-            setPrefSize(ScrabbleConstants.TILE_SIZE, ScrabbleConstants.TILE_SIZE);
-            setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, new CornerRadii(3), BorderWidths.DEFAULT)));
-            setBackground(new Background(new BackgroundFill(Color.BURLYWOOD, CornerRadii.EMPTY, Insets.EMPTY)));
-
-            Text questionMark = new Text("?");
-            questionMark.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-
-            getChildren().add(questionMark);
         }
     }
 

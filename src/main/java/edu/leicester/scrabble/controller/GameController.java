@@ -273,7 +273,7 @@ public class GameController {
 
                 // Show a confirmation dialog with the updated rack
                 showExchangeConfirmation();
-
+                Move passMove = Move.createPassMove(game.getCurrentPlayer());
                 // Explicitly trigger view updates
                 updateBoard();
                 updateRack();
@@ -748,15 +748,179 @@ public class GameController {
     }
 
     private boolean validateWords(Move move) {
+        Board board = game.getBoard();
         Dictionary dictionary = game.getDictionary();
 
-        for (String word : move.getFormedWords()) {
-            if (!dictionary.isValidWord(word)) {
-                return false;
+        List<String> formedWords = new ArrayList<>();
+        Map<String, List<Square>> wordSquaresMap = new HashMap<>();
+
+        int row = move.getStartRow();
+        int col = move.getStartCol();
+        Move.Direction direction = move.getDirection();
+
+        Board tempBoard = new Board();
+
+        for (int r = 0; r < Board.SIZE; r++) {
+            for (int c = 0; c < Board.SIZE; c++) {
+                Square square = board.getSquare(r, c);
+                if (square.hasTile()) {
+                    tempBoard.placeTile(r, c, square.getTile());
+                }
             }
         }
 
+        List<Point> newTilePositions = new ArrayList<>();
+
+        if (direction == Move.Direction.HORIZONTAL) {
+            int c = col;
+            for (Tile tile : move.getTiles()) {
+                while (c < Board.SIZE && tempBoard.getSquare(row, c).hasTile()) {
+                    c++;
+                }
+
+                if (c < Board.SIZE) {
+                    tempBoard.placeTile(row, c, tile);
+                    newTilePositions.add(new Point(row, c));
+                    c++;
+                }
+            }
+        } else {
+            int r = row;
+            for (Tile tile : move.getTiles()) {
+                while (r < Board.SIZE && tempBoard.getSquare(r, col).hasTile()) {
+                    r++;
+                }
+
+                if (r < Board.SIZE) {
+                    tempBoard.placeTile(r, col, tile);
+                    newTilePositions.add(new Point(r, col));
+                    r++;
+                }
+            }
+        }
+
+        List<Square> mainWord;
+        if (direction == Move.Direction.HORIZONTAL) {
+            mainWord = tempBoard.getHorizontalWord(row, col);
+        } else {
+            mainWord = tempBoard.getVerticalWord(row, col);
+        }
+
+        if (mainWord.isEmpty() || mainWord.size() < 2) {
+            return false;
+        }
+
+        String mainWordStr = Board.getWordString(mainWord);
+        if (!dictionary.isValidWord(mainWordStr)) {
+            return false;
+        }
+
+        formedWords.add(mainWordStr);
+        wordSquaresMap.put(mainWordStr, mainWord);
+
+        for (Point p : newTilePositions) {
+            List<Square> crossWord;
+
+            if (direction == Move.Direction.HORIZONTAL) {
+                crossWord = tempBoard.getVerticalWord(p.x, p.y);
+            } else {
+                crossWord = tempBoard.getHorizontalWord(p.x, p.y);
+            }
+
+            if (crossWord.size() > 1) {
+                String crossWordStr = Board.getWordString(crossWord);
+
+                if (!dictionary.isValidWord(crossWordStr)) {
+                    return false;
+                }
+
+                formedWords.add(crossWordStr);
+                wordSquaresMap.put(crossWordStr, crossWord);
+            }
+        }
+
+        move.setFormedWords(formedWords);
+        move.setMetadata("wordSquares", wordSquaresMap);
+
+        int score = calculateMoveScore(move, tempBoard, wordSquaresMap);
+        move.setScore(score);
+
         return true;
+    }
+
+    private int calculateWordScore(List<Square> wordSquares, boolean isNewMove) {
+        int wordScore = 0;
+        int wordMultiplier = 1;
+
+        StringBuilder scoreCalc = new StringBuilder("Word score calculation: ");
+
+        for (Square square : wordSquares) {
+            Tile tile = square.getTile();
+            int letterValue = tile.getValue();
+            int effectiveValue = letterValue;
+
+            if (isNewMove && !square.isSquareTypeUsed()) {
+                if (square.getSquareType() == Square.SquareType.DOUBLE_LETTER) {
+                    effectiveValue = letterValue * 2;
+                    scoreCalc.append(tile.getLetter()).append("(").append(letterValue).append("×2) + ");
+                } else if (square.getSquareType() == Square.SquareType.TRIPLE_LETTER) {
+                    effectiveValue = letterValue * 3;
+                    scoreCalc.append(tile.getLetter()).append("(").append(letterValue).append("×3) + ");
+                } else {
+                    scoreCalc.append(tile.getLetter()).append("(").append(letterValue).append(") + ");
+                }
+
+                if (square.getSquareType() == Square.SquareType.DOUBLE_WORD ||
+                        square.getSquareType() == Square.SquareType.CENTER) {
+                    wordMultiplier *= 2;
+                } else if (square.getSquareType() == Square.SquareType.TRIPLE_WORD) {
+                    wordMultiplier *= 3;
+                }
+            } else {
+                scoreCalc.append(tile.getLetter()).append("(").append(letterValue).append(") + ");
+            }
+
+            wordScore += effectiveValue;
+        }
+
+        int finalWordScore = wordScore * wordMultiplier;
+
+        if (wordMultiplier > 1) {
+            scoreCalc.append(" = ").append(wordScore).append(" × ").append(wordMultiplier)
+                    .append(" = ").append(finalWordScore);
+        } else {
+            if (scoreCalc.length() > 3) {
+                scoreCalc.setLength(scoreCalc.length() - 3);
+            }
+            scoreCalc.append(" = ").append(finalWordScore);
+        }
+
+        System.out.println(scoreCalc.toString());
+        return finalWordScore;
+    }
+
+    private int calculateMoveScore(Move move, Board tempBoard, Map<String, List<Square>> wordSquaresMap) {
+        int totalScore = 0;
+        boolean usedAllTiles = move.getTiles().size() == 7;
+
+        System.out.println("Calculating score for move: " + move);
+
+        for (String word : move.getFormedWords()) {
+            List<Square> wordSquares = wordSquaresMap.get(word);
+            if (wordSquares != null) {
+                int wordScore = calculateWordScore(wordSquares, true);
+                System.out.println("Word '" + word + "' score: " + wordScore);
+                totalScore += wordScore;
+            }
+        }
+
+        if (usedAllTiles) {
+            System.out.println("Bingo bonus: " + ScrabbleConstants.BINGO_BONUS);
+            totalScore += ScrabbleConstants.BINGO_BONUS;
+        }
+
+        System.out.println("Total move score: " + totalScore);
+        return totalScore;
     }
 
     public boolean selectTileFromRack(int index) {

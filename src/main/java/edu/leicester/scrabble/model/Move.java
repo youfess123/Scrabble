@@ -1,7 +1,9 @@
 package edu.leicester.scrabble.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Move {
 
@@ -25,6 +27,7 @@ public class Move {
     private final List<Character> placedLetters;
     private int score;
     private List<String> formedWords;
+    private Map<String, Object> metadata;
 
     public Move(Player player, Type type) {
         this.player = player;
@@ -33,6 +36,7 @@ public class Move {
         this.placedLetters = new ArrayList<>();
         this.formedWords = new ArrayList<>();
         this.score = 0;
+        this.metadata = new HashMap<>();
     }
 
     public static Move createPlaceMove(Player player, int startRow, int startCol, Direction direction) {
@@ -115,6 +119,21 @@ public class Move {
 
     public boolean isBlankMove() {
         return type == Type.PASS || tiles.isEmpty();
+    }
+
+
+    public void setMetadata(String key, Object value) {
+        metadata.put(key, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getMetadata(String key) {
+        return (T) metadata.get(key);
+    }
+
+
+    public boolean hasMetadata(String key) {
+        return metadata.containsKey(key);
     }
 
     @Override
