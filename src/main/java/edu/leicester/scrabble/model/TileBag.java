@@ -134,9 +134,14 @@ public class TileBag {
     }
 
     public static int getPointValue(char letter) {
+        letter = Character.toUpperCase(letter);
         LetterInfo info = LETTER_DATA.get(letter);
+        if (info == null) {
+            return 0; // Return 0 for blank tiles or unknown letters
+        }
         return info.getValue();
     }
+
 
     public Map<Character, Integer> getRemainingDistribution() {
         Map<Character, Integer> distribution = new HashMap<>();
@@ -146,4 +151,6 @@ public class TileBag {
         }
         return distribution;
     }
+
+
 }

@@ -1,5 +1,7 @@
 package edu.leicester.scrabble.model;
 
+import edu.leicester.scrabble.util.ScrabbleConstants;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -272,13 +274,120 @@ public class Game {
         return true;
     }
 
+    // Update this method in your Game.java class to ensure proper validation for all players
+
     public boolean isValidPlaceMove(Move move) {
-        // This is a placeholder for the complete validation logic
-        // A real implementation would check:
-        // 1. All words formed are valid
-        // 2. The placement is legal (connected to existing letters, etc.)
-        // 3. The player has the tiles
-        // 4. First move covers the center square
+        // Get necessary information from the move
+        int startRow = move.getStartRow();
+        int startCol = move.getStartCol();
+        Move.Direction direction = move.getDirection();
+        List<Tile> tiles = move.getTiles();
+
+        // Check if the tiles list is empty
+        if (tiles.isEmpty()) {
+            System.out.println("Invalid move: No tiles to place");
+            return false;
+        }
+
+        // Check if the starting position is valid
+        if (startRow < 0 || startRow >= Board.SIZE || startCol < 0 || startCol >= Board.SIZE) {
+            System.out.println("Invalid move: Starting position out of bounds");
+            return false;
+        }
+
+        // If this is the first move, ensure it covers the center square
+        if (board.isEmpty()) {
+            boolean touchesCenter = false;
+
+            if (direction == Move.Direction.HORIZONTAL) {
+                // Check if the horizontal word covers the center square
+                if (startRow == ScrabbleConstants.CENTER_SQUARE &&
+                        startCol <= ScrabbleConstants.CENTER_SQUARE &&
+                        startCol + tiles.size() > ScrabbleConstants.CENTER_SQUARE) {
+                    touchesCenter = true;
+                }
+            } else { // VERTICAL
+                // Check if the vertical word covers the center square
+                if (startCol == ScrabbleConstants.CENTER_SQUARE &&
+                        startRow <= ScrabbleConstants.CENTER_SQUARE &&
+                        startRow + tiles.size() > ScrabbleConstants.CENTER_SQUARE) {
+                    touchesCenter = true;
+                }
+            }
+
+            if (!touchesCenter) {
+                System.out.println("Invalid first move: Must cover center square");
+                return false;
+            }
+
+            return true; // First move only needs to cover center
+        }
+
+        // For subsequent moves, check that the word connects to existing tiles
+        boolean connects = false;
+        int currentRow = startRow;
+        int currentCol = startCol;
+
+        // Temporarily place the tiles to check connectivity
+        Board tempBoard = new Board();
+
+        // Copy the current state of the board
+        for (int r = 0; r < Board.SIZE; r++) {
+            for (int c = 0; c < Board.SIZE; c++) {
+                if (board.getSquare(r, c).hasTile()) {
+                    tempBoard.placeTile(r, c, board.getSquare(r, c).getTile());
+                }
+            }
+        }
+
+        // Place the tiles from the move onto the temporary board
+        for (Tile tile : tiles) {
+            // Skip positions that already have tiles
+            while (currentRow < Board.SIZE && currentCol < Board.SIZE &&
+                    tempBoard.getSquare(currentRow, currentCol).hasTile()) {
+                if (direction == Move.Direction.HORIZONTAL) {
+                    currentCol++;
+                } else {
+                    currentRow++;
+                }
+            }
+
+            // If we've gone off the board, the move is invalid
+            if (currentRow >= Board.SIZE || currentCol >= Board.SIZE) {
+                System.out.println("Invalid move: Placement extends beyond board");
+                return false;
+            }
+
+            // Place the tile
+            tempBoard.placeTile(currentRow, currentCol, tile);
+
+            // Check if this tile connects to an existing tile
+            if (!connects) {
+                // Directly on top of an existing tile (should not happen, but check anyway)
+                if (board.getSquare(currentRow, currentCol).hasTile()) {
+                    connects = true;
+                }
+
+                // Check adjacent tiles on the real board (not the temp board)
+                connects = connects || board.hasAdjacentTile(currentRow, currentCol);
+            }
+
+            // Move to next position
+            if (direction == Move.Direction.HORIZONTAL) {
+                currentCol++;
+            } else {
+                currentRow++;
+            }
+        }
+
+        if (!connects) {
+            System.out.println("Invalid move: Word does not connect to existing tiles");
+            return false;
+        }
+
+        // Check if all formed words are valid
+        // This would typically be done in the validateWords method called from executeMove
+
         return true;
     }
 
