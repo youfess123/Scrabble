@@ -1,6 +1,5 @@
 package edu.leicester.scrabble.controller;
 
-import edu.leicester.scrabble.model.Move;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 

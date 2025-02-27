@@ -1,6 +1,5 @@
-package com.scrabble.model;
+package edu.leicester.scrabble.model;
 
-import edu.leicester.scrabble.model.*;
 
 import java.util.ArrayList;
 import java.util.Comparator;
