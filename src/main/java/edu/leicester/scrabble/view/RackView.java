@@ -60,12 +60,10 @@ public class RackView extends HBox {
         playerLabel.setPadding(new Insets(0, 20, 0, 0));
         getChildren().add(playerLabel);
 
-        // Add tiles
         for (int i = 0; i < rack.size(); i++) {
             Tile tile = rack.getTile(i);
             TileView tileView = new TileView(tile, i);
 
-            // Apply selection styling if tile is selected
             if (controller.isTileSelected(i)) {
                 tileView.select();
             }
@@ -74,7 +72,6 @@ public class RackView extends HBox {
             getChildren().add(tileView);
         }
 
-        // Add empty slots
         for (int i = 0; i < rack.getEmptySlots(); i++) {
             EmptySlotView emptySlot = new EmptySlotView();
             getChildren().add(emptySlot);
@@ -115,11 +112,10 @@ public class RackView extends HBox {
         private void setupEvents() {
             setOnMouseClicked(event -> {
                 controller.selectTileFromRack(index);
-                updateRack(); // Update the entire rack to reflect selection changes
+                updateRack();
             });
 
             setOnDragDetected(event -> {
-                // Only allow dragging if the tile is not already placed on the board
                 if (controller.isTileSelected(index)) {
                     Dragboard db = startDragAndDrop(TransferMode.MOVE);
                     ClipboardContent content = new ClipboardContent();
@@ -128,7 +124,6 @@ public class RackView extends HBox {
                     isDragging = true;
                     event.consume();
                 } else {
-                    // First select the tile, then allow dragging on next attempt
                     controller.selectTileFromRack(index);
                     updateRack();
                 }
@@ -136,7 +131,6 @@ public class RackView extends HBox {
 
             setOnDragDone(event -> {
                 isDragging = false;
-                // The tile may have been placed on the board or dropped elsewhere
                 event.consume();
             });
         }

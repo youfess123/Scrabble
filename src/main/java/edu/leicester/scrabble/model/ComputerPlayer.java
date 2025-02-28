@@ -162,7 +162,7 @@ public class ComputerPlayer {
             findMovesForEmptyBoard(game, possibleMoves);
             return possibleMoves;
         }
-        List<Point> anchorPoints = findAnchorPoints(board);
+        List<Point> anchorPoints = findAnchorPoints(board);//anchor points are just empty square next to a tile
         System.out.println("Found " + anchorPoints.size() + " anchor points");
         for (Point anchor : anchorPoints) {
             int row = anchor.x;
