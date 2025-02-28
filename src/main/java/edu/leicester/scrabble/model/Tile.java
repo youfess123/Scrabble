@@ -39,7 +39,7 @@ public class Tile {
 
     @Override
     public String toString() {
-        return isBlank ? (STR."\{letter}(Blank)") : String.valueOf(letter);
+        return isBlank ? (letter + "(Blank)") : String.valueOf(letter);
     }
 
     @Override

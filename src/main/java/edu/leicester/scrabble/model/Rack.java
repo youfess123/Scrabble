@@ -24,7 +24,7 @@ public class Rack {
         }
 
         boolean result = tiles.add(tile);
-        System.out.println(STR."Rack: Added tile \{tile.getLetter()}. Rack size now: \{tiles.size()}");
+        System.out.println("Rack: Added tile " + tile.getLetter() + ". Rack size now: " + tiles.size());
         return result;
     }
 
@@ -34,7 +34,7 @@ public class Rack {
             return 0;
         }
 
-        System.out.println(STR."Rack: Attempting to add \{tilesToAdd.size()} tiles. Current size: \{tiles.size()}");
+        System.out.println("Rack: Attempting to add " + tilesToAdd.size() + " tiles. Current size: " + tiles.size());
 
         int count = 0;
         for (Tile tile : tilesToAdd) {
@@ -46,7 +46,7 @@ public class Rack {
             if (addTile(tile)) {
                 count++;
             } else {
-                System.out.println(STR."WARNING: Failed to add tile \{tile.getLetter()}");
+                System.out.println("WARNING: Failed to add tile " + tile.getLetter());
                 break;
             }
         }
@@ -63,9 +63,9 @@ public class Rack {
 
         boolean result = tiles.remove(tile);
         if (result) {
-            System.out.println(STR."Rack: Removed tile \{tile.getLetter()}. Rack size now: \{tiles.size()}");
+            System.out.println("Rack: Removed tile " + tile.getLetter() + ". Rack size now: " + tiles.size());
         } else {
-            System.out.println(STR."WARNING: Tile \{tile.getLetter()} not found in rack");
+            System.out.println("WARNING: Tile " + tile.getLetter() + " not found in rack");
         }
     }
 
@@ -75,10 +75,9 @@ public class Rack {
             return false;
         }
 
-        System.out.println(STR."Rack: Attempting to remove \{tilesToRemove.size()} tiles. Current size: \{tiles.size()}");
+        System.out.println("Rack: Attempting to remove " + tilesToRemove.size() + " tiles. Current size: " + tiles.size());
 
         List<Tile> tilesToRemoveCopy = new ArrayList<>(tilesToRemove);
-        int initialSize = tiles.size();
         int removedCount = 0;
 
         for (Tile tileToRemove : tilesToRemoveCopy) {
@@ -94,13 +93,12 @@ public class Rack {
                     break;
                 }
             }
-
             if (!found) {
-                System.out.println(STR."WARNING: Could not find matching tile for \{tileToRemove.getLetter()}");
+                System.out.println("WARNING: Could not find matching tile for " + tileToRemove.getLetter());
             }
         }
 
-        System.out.println(STR."Rack: Removed \{removedCount} tiles. New size: \{tiles.size()}");
+        System.out.println("Rack: Removed " + removedCount + " tiles. New size: " + tiles.size());
         return (removedCount == tilesToRemoveCopy.size());
     }
 

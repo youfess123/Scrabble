@@ -43,7 +43,6 @@ public class BoardView extends GridPane {
 
     private void initializeSquares() {
         Board board = controller.getBoard();
-
         for (int row = 0; row < Board.SIZE; row++) {
             for (int col = 0; col < Board.SIZE; col++) {
                 Square square = board.getSquare(row, col);
@@ -56,10 +55,8 @@ public class BoardView extends GridPane {
 
     public void updateBoard() {
         Board board = controller.getBoard();
-
         for (int row = 0; row < Board.SIZE; row++) {
             for (int col = 0; col < Board.SIZE; col++) {
-                Square square = board.getSquare(row, col);
                 squareViews[row][col].update();
             }
         }
@@ -98,8 +95,6 @@ public class BoardView extends GridPane {
 
         public void update() {
             isTemporaryTile = controller.hasTemporaryTileAt(row, col);
-
-            // Check for temporary placement first
             if (isTemporaryTile) {
                 Tile tempTile = controller.getTemporaryTileAt(row, col);
                 if (tempTile != null) {
@@ -112,10 +107,7 @@ public class BoardView extends GridPane {
                     return;
                 }
             }
-
-            // Regular board update
             updateBackground();
-
             if (square.hasTile()) {
                 Tile tile = square.getTile();
                 label.setText(String.valueOf(tile.getLetter()));
@@ -127,8 +119,6 @@ public class BoardView extends GridPane {
                 label.setText("");
                 label.setStyle("");
                 setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(0.5))));
-
-
                 switch (square.getSquareType()) {
                     case DOUBLE_LETTER:
                         premiumLabel.setText("DL");
@@ -159,7 +149,6 @@ public class BoardView extends GridPane {
 
         private void updateBackground() {
             Color backgroundColor;
-
             if (square.hasTile()) {
                 backgroundColor = Color.BURLYWOOD;
             } else {
@@ -184,30 +173,20 @@ public class BoardView extends GridPane {
                         break;
                 }
             }
-
             setBackground(new Background(new BackgroundFill(backgroundColor, CornerRadii.EMPTY, Insets.EMPTY)));
         }
 
         private boolean isValidPlacement(int row, int col) {
             Board board = controller.getBoard();
-
-            // If square already has a tile or a temporary placement, it's invalid
             if (board.getSquare(row, col).hasTile() || controller.hasTemporaryTileAt(row, col)) {
                 return false;
             }
-
-            // If board is empty, only allow center square
             if (board.isEmpty() && controller.getTemporaryPlacements().isEmpty()) {
-                // First move in the game must go through the center square
                 return row == ScrabbleConstants.CENTER_SQUARE && col == ScrabbleConstants.CENTER_SQUARE;
             }
-
-            // If there are already temporary placements, check if this square is adjacent or in line
             if (!controller.getTemporaryPlacements().isEmpty()) {
                 return controller.isValidTemporaryPlacement(row, col);
             }
-
-            // Otherwise, square must be adjacent to an existing tile
             return board.hasAdjacentTile(row, col);
         }
 
@@ -215,20 +194,11 @@ public class BoardView extends GridPane {
             setOnDragOver(event -> {
                 if (event.getGestureSource() != this && isValidPlacement(row, col)) {
                     event.acceptTransferModes(TransferMode.MOVE);
-
-                    // Highlight this square to indicate valid placement
                     setStyle("-fx-border-color: gold; -fx-border-width: 2;");
-
-                    // If there are already temporary placements, show the direction
                     if (!controller.getTemporaryPlacements().isEmpty()) {
                         Move.Direction direction = controller.determineDirection();
                         if (direction != null) {
-                            // Add a subtle direction indicator
-                            if (direction == Move.Direction.HORIZONTAL) {
-                                setStyle("-fx-border-color: gold; -fx-border-width: 2; -fx-border-radius: 0 0 0 0;");
-                            } else {
-                                setStyle("-fx-border-color: gold; -fx-border-width: 2; -fx-border-radius: 0 0 0 0;");
-                            }
+                            setStyle("-fx-border-color: gold; -fx-border-width: 2;");
                         }
                     }
                 }
@@ -250,18 +220,14 @@ public class BoardView extends GridPane {
             setOnDragDropped(event -> {
                 Dragboard db = event.getDragboard();
                 boolean success = false;
-
                 if (db.hasString() && isValidPlacement(row, col)) {
                     try {
                         int tileIndex = Integer.parseInt(db.getString());
-
-                        // Place the tile temporarily rather than permanently
                         success = controller.placeTileTemporarily(tileIndex, row, col);
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid drag data: " + e.getMessage());
                     }
                 }
-
                 event.setDropCompleted(success);
                 event.consume();
             });

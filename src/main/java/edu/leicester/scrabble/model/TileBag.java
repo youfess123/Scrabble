@@ -24,8 +24,7 @@ public class TileBag {
         }
     }
 
-    private static final Map<Character, LetterInfo> LETTER_DATA = new HashMap<>();{
-
+    private static final Map<Character, LetterInfo> LETTER_DATA = new HashMap<>(); {
         LETTER_DATA.put('A', new LetterInfo(9, 1));
         LETTER_DATA.put('B', new LetterInfo(2, 3));
         LETTER_DATA.put('C', new LetterInfo(2, 3));
@@ -65,11 +64,9 @@ public class TileBag {
     private void initialiseTiles() {
         for (Map.Entry<Character, LetterInfo> entry : LETTER_DATA.entrySet()) {
             char letter = entry.getKey();
-
             LetterInfo info = LETTER_DATA.get(letter);
             int count = info.getCount();
             int value = info.getValue();
-
             for (int i = 0; i < count; i++) {
                 tiles.add(new Tile(letter, value));
             }
@@ -87,11 +84,9 @@ public class TileBag {
         }
 
         int beforeCount = tiles.size();
-
         this.tiles.addAll(tilesToReturn);
-
         int afterCount = tiles.size();
-        System.out.println(STR."TileBag: Added \{afterCount - beforeCount} tiles to bag");
+        System.out.println("TileBag: Added " + (afterCount - beforeCount) + " tiles to bag");
         shuffle();
     }
 
@@ -99,15 +94,13 @@ public class TileBag {
         List<Tile> drawnTiles = new ArrayList<>();
 
         if (count <= 0) {
-            System.out.println(STR."WARNING: Tried to draw \{count} tiles");
+            System.out.println("WARNING: Tried to draw " + count + " tiles");
             return drawnTiles;
         }
 
-        System.out.println(STR."TileBag: Attempting to draw \{count} tiles. Available: \{tiles.size()}");
+        System.out.println("TileBag: Attempting to draw " + count + " tiles. Available: " + tiles.size());
 
-        // Can't draw more tiles than available
         int tilesToDraw = Math.min(count, tiles.size());
-
         for (int i = 0; i < tilesToDraw; i++) {
             Tile tile = drawTile();
             if (tile != null) {
@@ -115,8 +108,7 @@ public class TileBag {
             }
         }
 
-        System.out.println(STR."TileBag: Drew \{drawnTiles.size()} tiles. Remaining: \{tiles.size()}");
-
+        System.out.println("TileBag: Drew " + drawnTiles.size() + " tiles. Remaining: " + tiles.size());
         return drawnTiles;
     }
 
@@ -125,7 +117,7 @@ public class TileBag {
             System.out.println("WARNING: Tile bag is empty");
             return null;
         }
-        return tiles.removeLast();
+        return tiles.remove(tiles.size() - 1);
     }
 
     public int getTileCount() {

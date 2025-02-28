@@ -137,7 +137,6 @@ public class RackView extends HBox {
             setOnDragDone(event -> {
                 isDragging = false;
                 // The tile may have been placed on the board or dropped elsewhere
-                // We'll let the controller handle the selection state
                 event.consume();
             });
         }

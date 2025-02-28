@@ -15,7 +15,7 @@ public class Board {
     private void initialiseBoard(){
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
-                board[row][col] =new Square(row,col, getSquareTypeFor(row,col));
+                board[row][col] = new Square(row, col, getSquareTypeFor(row, col));
             }
         }
     }
@@ -24,12 +24,10 @@ public class Board {
         if (row == 7 && col == 7){
             return Square.SquareType.CENTER;
         }
-
         if ((row == 0 || row == 14) && (col == 0 || col == 7 || col == 14) ||
                 (row == 7 && (col == 0 || col == 14))) {
             return Square.SquareType.TRIPLE_WORD;
         }
-
         if (row == col || row + col == 14) {
             if (row > 0 && row < 14 && col > 0 && col < 14) {
                 if (row != 7 || col != 7) {
@@ -37,12 +35,10 @@ public class Board {
                 }
             }
         }
-
         if ((row == 1 || row == 13) && (col == 5 || col == 9) ||
                 (row == 5 || row == 9) && (col == 1 || col == 5 || col == 9 || col == 13)) {
             return Square.SquareType.TRIPLE_LETTER;
         }
-
         if ((row == 0 || row == 14) && (col == 3 || col == 11) ||
                 (row == 2 || row == 12) && (col == 6 || col == 8) ||
                 (row == 3 || row == 11) && (col == 0 || col == 7 || col == 14) ||
@@ -50,44 +46,38 @@ public class Board {
                 (row == 7) && (col == 3 || col == 11)) {
             return Square.SquareType.DOUBLE_LETTER;
         }
-
         return Square.SquareType.NONE;
     }
+
     public Square getSquare(int row, int col) {
         if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
-            throw new IndexOutOfBoundsException(STR."Invalid position: (\{row}, \{col})");
+            throw new IndexOutOfBoundsException("Invalid position: "+row+" "+col);
         }
         return board[row][col];
     }
 
     public void placeTile(int row, int col, Tile tile) {
         Square square = getSquare(row, col);
-        if(square.hasTile()){
+        if (square.hasTile()){
             return;
         }
         square.setTile(tile);
     }
 
-
     public List<Square> getAdjacentOccupiedSquares(int row, int col) {
         List<Square> adjacent = new ArrayList<>();
-
         if (row > 0 && getSquare(row - 1, col).hasTile()) {
             adjacent.add(getSquare(row - 1, col));
         }
-
         if (row < SIZE - 1 && getSquare(row + 1, col).hasTile()) {
             adjacent.add(getSquare(row + 1, col));
         }
-
         if (col > 0 && getSquare(row, col - 1).hasTile()) {
             adjacent.add(getSquare(row, col - 1));
         }
-
         if (col < SIZE - 1 && getSquare(row, col + 1).hasTile()) {
             adjacent.add(getSquare(row, col + 1));
         }
-
         return adjacent;
     }
 
@@ -97,46 +87,35 @@ public class Board {
 
     public List<Square> getHorizontalWord(int row, int col) {
         List<Square> word = new ArrayList<>();
-
         if (!getSquare(row, col).hasTile()) {
             return word;
         }
-
         int startCol = col;
         while (startCol > 0 && getSquare(row, startCol - 1).hasTile()) {
             startCol--;
         }
-
         int currentCol = startCol;
         while (currentCol < SIZE && getSquare(row, currentCol).hasTile()) {
             word.add(getSquare(row, currentCol));
             currentCol++;
         }
-
         return word.size() >= 2 ? word : new ArrayList<>();
     }
 
     public List<Square> getVerticalWord(int row, int col) {
         List<Square> word = new ArrayList<>();
-
-        // Skip if the starting position doesn't have a tile
         if (!getSquare(row, col).hasTile()) {
             return word;
         }
-
-        // Find the topmost position of the word
         int startRow = row;
         while (startRow > 0 && getSquare(startRow - 1, col).hasTile()) {
             startRow--;
         }
-
-        // Collect all tiles from top to bottom
         int currentRow = startRow;
         while (currentRow < SIZE && getSquare(currentRow, col).hasTile()) {
             word.add(getSquare(currentRow, col));
             currentRow++;
         }
-
         return word.size() >= 2 ? word : new ArrayList<>();
     }
 
@@ -156,7 +135,6 @@ public class Board {
             sb.append(String.format("%2d ", col + 1));
         }
         sb.append("\n");
-
         for (int row = 0; row < SIZE; row++) {
             sb.append(String.format("%2d ", row + 1));
             for (int col = 0; col < SIZE; col++) {

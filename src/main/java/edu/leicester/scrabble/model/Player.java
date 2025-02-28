@@ -51,6 +51,6 @@ public class Player {
 
     @Override
     public String toString() {
-        return STR."\{name} (Score: \{score})";
+        return name + " (Score: " + score + ")";
     }
 }

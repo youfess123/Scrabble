@@ -38,22 +38,18 @@ public class GameInfoView extends VBox {
         setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, new CornerRadii(5), BorderWidths.DEFAULT)));
         setBackground(new Background(new BackgroundFill(Color.WHITESMOKE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-        // Current player section
         currentPlayerLabel = new Label();
         currentPlayerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         currentPlayerLabel.setWrapText(true);
 
-        // Tiles remaining section
         tilesRemainingLabel = new Label();
         tilesRemainingLabel.setFont(Font.font("Arial", 12));
 
-        // Player scores section
         Label scoresHeader = new Label("Scores");
         scoresHeader.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
         playerScoresBox = new VBox(5);
 
-        // Move history section
         Label historyHeader = new Label("Move History");
         historyHeader.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
@@ -90,36 +86,24 @@ public class GameInfoView extends VBox {
 
     private void updatePlayerScores() {
         playerScoresBox.getChildren().clear();
-
         for (Player player : controller.getPlayers()) {
             Label scoreLabel = new Label(player.getName() + ": " + player.getScore());
-
             if (player == controller.getCurrentPlayer()) {
                 scoreLabel.setTextFill(Color.BLUE);
                 scoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 12));
             } else {
                 scoreLabel.setFont(Font.font("Arial", 12));
             }
-
             playerScoresBox.getChildren().add(scoreLabel);
         }
     }
 
-
     private void updateMoveHistory() {
-        // Clear the current items in the list
         moveHistoryList.getItems().clear();
-
-        // Add the initial "Game started" entry
         moveHistoryList.getItems().add("Game started");
-
-        // Get the move history from the game model
         List<Move> moves = controller.getMoveHistory();
-
-        // Add each move to the list view
         for (Move move : moves) {
             moveHistoryList.getItems().add(move.toString());
         }
     }
-
 }
