@@ -1,6 +1,7 @@
 package edu.leicester.scrabble.view;
 
 import edu.leicester.scrabble.controller.GameController;
+import edu.leicester.scrabble.model.Move;
 import edu.leicester.scrabble.model.Player;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
@@ -17,6 +18,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+
+import java.util.List;
 
 public class GameInfoView extends VBox {
 
@@ -102,11 +105,21 @@ public class GameInfoView extends VBox {
         }
     }
 
+
     private void updateMoveHistory() {
-        // This would be populated with actual move history
-        // For simplicity, we're just using a placeholder
-        if (moveHistoryList.getItems().isEmpty()) {
-            moveHistoryList.getItems().add("Game started");
+        // Clear the current items in the list
+        moveHistoryList.getItems().clear();
+
+        // Add the initial "Game started" entry
+        moveHistoryList.getItems().add("Game started");
+
+        // Get the move history from the game model
+        List<Move> moves = controller.getMoveHistory();
+
+        // Add each move to the list view
+        for (Move move : moves) {
+            moveHistoryList.getItems().add(move.toString());
         }
     }
+
 }

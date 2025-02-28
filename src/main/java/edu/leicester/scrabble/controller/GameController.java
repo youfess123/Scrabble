@@ -62,6 +62,10 @@ public class GameController {
         makeComputerMoveIfNeeded();
     }
 
+    public List<Move> getMoveHistory() {
+        return game.getMoveHistory();
+    }
+
     public boolean makeMove(Move move) {
         if (!gameInProgress) {
             return false;
@@ -84,6 +88,10 @@ public class GameController {
             updateBoard();
             updateRack();
             updateCurrentPlayer();
+
+            if (playerUpdateListener != null) {
+                Platform.runLater(playerUpdateListener);
+            }
 
             // Check if game is over
             if (game.isGameOver()) {
