@@ -145,7 +145,6 @@ public class GameController {
         });
     }
 
-
     private void makeComputerMoveIfNeeded() {
         Player currentPlayer = game.getCurrentPlayer();
 
