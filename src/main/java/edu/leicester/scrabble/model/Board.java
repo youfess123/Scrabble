@@ -1,10 +1,12 @@
 package edu.leicester.scrabble.model;
 
+import edu.leicester.scrabble.util.ScrabbleConstants;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
-    public static final int SIZE = 15;
+    public static final int SIZE = ScrabbleConstants.BOARD_SIZE;
     private final Square[][] board;
 
     public Board() {
