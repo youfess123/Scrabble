@@ -1,5 +1,6 @@
 package edu.leicester.scrabble;
 
+import com.sun.tools.javac.Main;
 import edu.leicester.scrabble.controller.GameController;
 import edu.leicester.scrabble.model.Game;
 import edu.leicester.scrabble.model.Player;
@@ -22,39 +23,20 @@ public class ScrabbleApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            // Initialize the game
             initGame();
-
-            // Create the controller
             gameController = new GameController(game);
-
-            // Create the view
             GameView gameView = new GameView(gameController);
-
-            // Create the scene
             Scene scene = new Scene(gameView, 1024, 768);
 
-            // Try to load the CSS stylesheet if it exists
-            try {
-                String cssResource = "/edu/leicester/scrabble/styles/style.css";
-                if (getClass().getResource(cssResource) != null) {
-                    scene.getStylesheets().add(getClass().getResource(cssResource).toExternalForm());
-                } else {
-                    System.out.println("CSS stylesheet not found. Using default styles.");
-                    // Application will use default JavaFX styling
-                }
-            } catch (Exception e) {
-                System.out.println("Warning: Failed to load CSS: " + e.getMessage());
-            }
+            String cssResource = "/edu/leicester/scrabble/styles/style.css";
+            scene.getStylesheets().add(getClass().getResource(cssResource).toExternalForm());
 
-            // Set up the stage
             primaryStage.setTitle("Scrabble");
             primaryStage.setScene(scene);
             primaryStage.setMinWidth(800);
             primaryStage.setMinHeight(600);
             primaryStage.show();
 
-            // Start the game
             gameController.startGame();
 
         } catch (Exception e) {
@@ -63,28 +45,15 @@ public class ScrabbleApp extends Application {
         }
     }
 
-    /**
-     * Initializes the game model.
-     *
-     * @throws IOException If the dictionary cannot be loaded
-     */
     private void initGame() throws IOException {
-        // Load the dictionary
         InputStream dictionaryStream = FileLoader.loadDefaultDictionary();
 
-        // Create the game
-        game = new Game(dictionaryStream, "Default");
+        game = new Game(dictionaryStream, "Dictionary.txt");
 
-        // Add players
         game.addPlayer(new Player("Player 1"));
         game.addPlayer(new Player("Computer", true));
     }
 
-    /**
-     * Shows an error message and exits the application.
-     *
-     * @param message The error message
-     */
     private void showErrorAndExit(String message) {
         try {
             javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
@@ -95,17 +64,11 @@ public class ScrabbleApp extends Application {
             alert.setContentText(message);
             alert.showAndWait();
         } catch (Exception e) {
-            // If JavaFX platform isn't running yet, fall back to console error
             System.err.println("ERROR: " + message);
         }
         System.exit(1);
     }
 
-    /**
-     * Main method.
-     *
-     * @param args Command line arguments
-     */
     public static void main(String[] args) {
         launch(args);
     }

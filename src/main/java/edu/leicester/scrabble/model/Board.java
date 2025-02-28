@@ -69,7 +69,7 @@ public class Board {
         return true;
     }
 
-    public Tile removeTile(int row, int col) {
+    public Tile removeTile(int row, int col) { //rewind button potential
         return getSquare(row, col).removeTile();
     }
 

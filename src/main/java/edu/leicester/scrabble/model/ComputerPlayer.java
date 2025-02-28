@@ -1,9 +1,7 @@
 package edu.leicester.scrabble.model;
 
 import edu.leicester.scrabble.util.ScrabbleConstants;
-import edu.leicester.scrabble.util.WordScoreCalculator;
 
-import java.awt.*;
 import java.util.*;
 import java.util.List;
 
@@ -687,11 +685,4 @@ public class ComputerPlayer {
         return count;
     }
 
-    private String getRackLetters() {
-        StringBuilder letters = new StringBuilder();
-        for (Tile tile : player.getRack().getTiles()) {
-            letters.append(tile.getLetter());
-        }
-        return letters.toString();
-    }
 }

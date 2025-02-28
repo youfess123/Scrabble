@@ -89,24 +89,12 @@ public class Move {
         tiles.addAll(tilesToAdd);
     }
 
-    public void addPlacedLetter(char letter) {
-        placedLetters.add(letter);
-    }
-
-    public List<Character> getPlacedLetters() {
-        return new ArrayList<>(placedLetters);
-    }
-
     public void setScore(int score) {
         this.score = score;
     }
 
     public int getScore() {
         return score;
-    }
-
-    public void addFormedWord(String word) {
-        formedWords.add(word);
     }
 
     public void setFormedWords(List<String> words) {
@@ -116,11 +104,6 @@ public class Move {
     public List<String> getFormedWords() {
         return new ArrayList<>(formedWords);
     }
-
-    public boolean isBlankMove() {
-        return type == Type.PASS || tiles.isEmpty();
-    }
-
 
     public void setMetadata(String key, Object value) {
         metadata.put(key, value);
