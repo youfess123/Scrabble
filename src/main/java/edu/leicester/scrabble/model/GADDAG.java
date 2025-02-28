@@ -20,32 +20,23 @@ public class GADDAG {
         word = word.toUpperCase();
 
         if (word.length() < 2) {
-            // Only insert words with at least 2 letters (Scrabble rule)
             return;
         }
 
-        // For each possible starting position in the word
         for (int i = 0; i < word.length(); i++) {
-            // Build the sequence to insert into the GADDAG
             StringBuilder sequence = new StringBuilder();
 
-            // Add the reverse of the prefix
             for (int j = i; j > 0; j--) {
                 sequence.append(word.charAt(j - 1));
             }
 
-            // Add the delimiter
             sequence.append(DELIMITER);
 
-            // Add the suffix
             sequence.append(word.substring(i));
 
-            // Insert the sequence into the trie
             insertSequence(sequence.toString());
         }
 
-        // Also insert the word with just the delimiter at the start
-        // This handles the case of playing a word from scratch
         insertSequence(DELIMITER + word);
     }
 
@@ -67,7 +58,6 @@ public class GADDAG {
             return false;
         }
 
-        // The simplest way to check is to see if the direct sequence exists
         Node current = root;
         String sequence = DELIMITER + word;
 

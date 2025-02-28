@@ -40,28 +40,26 @@ public class Game {
 
         tileBag.shuffle();
 
-        // Fill each player's rack
         for (Player player : players) {
             fillRack(player);
         }
 
-        // Randomize starting player
         currentPlayerIndex = (int) (Math.random() * players.size());
         gameOver = false;
         consecutivePasses = 0;
         moveHistory.clear();
     }
 
-    public int fillRack(Player player) {
+    public void fillRack(Player player) {
         Rack rack = player.getRack();
         int tilesToDraw = rack.getEmptySlots();
 
         if (tilesToDraw == 0) {
-            return 0;
+            return;
         }
 
         List<Tile> drawnTiles = tileBag.drawTiles(tilesToDraw);
-        return rack.addTiles(drawnTiles);
+        rack.addTiles(drawnTiles);
     }
 
     public Player getCurrentPlayer() {
@@ -71,8 +69,8 @@ public class Game {
     public void nextPlayer() {
         int oldIndex = currentPlayerIndex;
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-        System.out.println("Player changed from index " + oldIndex + " to " + currentPlayerIndex);
-        System.out.println("Current player is now: " + getCurrentPlayer().getName());
+        System.out.println(STR."Player changed from index \{oldIndex} to \{currentPlayerIndex}");
+        System.out.println(STR."Current player is now: \{getCurrentPlayer().getName()}");
     }
 
     public Board getBoard() {
@@ -111,24 +109,16 @@ public class Game {
         }
 
         boolean success = false;
-        System.out.println("Executing move of type: " + move.getType());
+        System.out.println(STR."Executing move of type: \{move.getType()}");
 
         try {
-            switch (move.getType()) {
-                case PLACE:
-                    success = executePlaceMove(move);
-                    break;
-
-                case EXCHANGE:
-                    success = executeExchangeMove(move);
-                    break;
-
-                case PASS:
-                    success = executePassMove(move);
-                    break;
-            }
+            success = switch (move.getType()) {
+                case PLACE -> executePlaceMove(move);
+                case EXCHANGE -> executeExchangeMove(move);
+                case PASS -> executePassMove(move);
+            };
         } catch (Exception e) {
-            System.err.println("Error executing move: " + e.getMessage());
+            System.err.println(STR."Error executing move: \{e.getMessage()}");
             e.printStackTrace();
             return false;
         }
@@ -137,15 +127,13 @@ public class Game {
             System.out.println("Move executed successfully");
             moveHistory.add(move);
 
-            // Check if the game is over
             if (checkGameOver()) {
                 finaliseGameScore();
                 return true;
             }
 
-            // Move to next player
             nextPlayer();
-            System.out.println("Turn passed to: " + getCurrentPlayer().getName());
+            System.out.println(STR."Turn passed to: \{getCurrentPlayer().getName()}");
         } else {
             System.out.println("Move execution failed");
         }
@@ -153,14 +141,8 @@ public class Game {
         return success;
     }
 
-    /**
-     * Executes a PLACE move using GADDAG for word validation.
-     *
-     * @param move The PLACE move to execute
-     * @return true if the move was successfully executed
-     */
+
     private boolean executePlaceMove(Move move) {
-        // First validate the move
         if (!isValidPlaceMove(move)) {
             return false;
         }
@@ -171,10 +153,8 @@ public class Game {
         List<Tile> tilesToPlace = move.getTiles();
         Move.Direction direction = move.getDirection();
 
-        // Create a temporary board to calculate the exact positions where tiles will be placed
         Board tempBoard = new Board();
 
-        // Copy current board state
         for (int r = 0; r < Board.SIZE; r++) {
             for (int c = 0; c < Board.SIZE; c++) {
                 Square square = board.getSquare(r, c);
@@ -184,15 +164,12 @@ public class Game {
             }
         }
 
-        // Track positions where new tiles will be placed
         List<Point> newTilePositions = new ArrayList<>();
 
-        // Place the tiles on the temporary board
         int currentRow = row;
         int currentCol = col;
 
         for (Tile tile : tilesToPlace) {
-            // Skip positions that already have tiles
             while (currentRow < Board.SIZE && currentCol < Board.SIZE &&
                     tempBoard.getSquare(currentRow, currentCol).hasTile()) {
                 if (direction == Move.Direction.HORIZONTAL) {
@@ -202,12 +179,10 @@ public class Game {
                 }
             }
 
-            // Place the tile on the temporary board
             if (currentRow < Board.SIZE && currentCol < Board.SIZE) {
                 tempBoard.placeTile(currentRow, currentCol, tile);
                 newTilePositions.add(new Point(currentRow, currentCol));
 
-                // Move to next position
                 if (direction == Move.Direction.HORIZONTAL) {
                     currentCol++;
                 } else {
@@ -216,21 +191,17 @@ public class Game {
             }
         }
 
-        // Validate and calculate all words formed
         List<String> formedWords = validateWords(tempBoard, move, newTilePositions);
 
         if (formedWords.isEmpty()) {
-            return false; // No valid words formed
+            return false;
         }
 
-        // Set the formed words in the move
         move.setFormedWords(formedWords);
 
-        // Calculate score
         int score = calculateMoveScore(tempBoard, move, newTilePositions);
         move.setScore(score);
 
-        // Now place the tiles on the actual board
         for (int i = 0; i < tilesToPlace.size(); i++) {
             Tile tile = tilesToPlace.get(i);
             Point position = (i < newTilePositions.size()) ? newTilePositions.get(i) : null;
@@ -239,24 +210,18 @@ public class Game {
                 // Place the tile on the board
                 board.placeTile(position.x, position.y, tile);
 
-                // Mark premium squares as used
                 board.getSquare(position.x, position.y).useSquareType();
 
-                // Remove the tile from the player's rack
                 player.getRack().removeTile(tile);
             }
         }
 
-        // Update player's score
         player.addScore(score);
 
-        // Reset consecutive passes counter
         consecutivePasses = 0;
 
-        // Refill the player's rack
         fillRack(player);
 
-        // Check for empty rack bonus
         if (player.getRack().isEmpty() && tileBag.isEmpty()) {
             player.addScore(EMPTY_RACK_BONUS);
         }
@@ -264,23 +229,13 @@ public class Game {
         return true;
     }
 
-    /**
-     * Validates all words formed by a move on a board.
-     *
-     * @param tempBoard The temporary board with the move applied
-     * @param move The move being validated
-     * @param newTilePositions Positions of new tiles
-     * @return List of valid words formed, empty if any word is invalid
-     */
     private List<String> validateWords(Board tempBoard, Move move, List<Point> newTilePositions) {
         List<String> formedWords = new ArrayList<>();
 
-        // Get move details
         int row = move.getStartRow();
         int col = move.getStartCol();
         Move.Direction direction = move.getDirection();
 
-        // First check main word
         String mainWord;
         if (direction == Move.Direction.HORIZONTAL) {
             mainWord = getWordAt(tempBoard, row, findWordStart(tempBoard, row, col, true), true);
@@ -288,40 +243,33 @@ public class Game {
             mainWord = getWordAt(tempBoard, findWordStart(tempBoard, row, col, false), col, false);
         }
 
-        // Validate main word
         if (mainWord.length() < 2) {
             System.out.println("Invalid move: Main word is too short");
-            return formedWords; // Return empty list
+            return formedWords;
         }
 
         if (!dictionary.isValidWord(mainWord)) {
-            System.out.println("Invalid move: Main word '" + mainWord + "' is not in dictionary");
-            return formedWords; // Return empty list
+            System.out.println(STR."Invalid move: Main word '\{mainWord}' is not in dictionary");
+            return formedWords;
         }
 
-        // Add the main word
         formedWords.add(mainWord);
 
-        // Check crosswords formed by each new tile
         for (Point p : newTilePositions) {
             String crossWord;
 
-            // Check for a crossing word perpendicular to the main word
             if (direction == Move.Direction.HORIZONTAL) {
                 crossWord = getWordAt(tempBoard, findWordStart(tempBoard, p.x, p.y, false), p.y, false);
             } else {
                 crossWord = getWordAt(tempBoard, p.x, findWordStart(tempBoard, p.x, p.y, true), true);
             }
 
-            // Only consider words with at least 2 letters
             if (crossWord.length() >= 2) {
-                // Validate the crossing word
                 if (!dictionary.isValidWord(crossWord)) {
-                    System.out.println("Invalid move: Crossing word '" + crossWord + "' is not in dictionary");
-                    return new ArrayList<>(); // Return empty list if any word is invalid
+                    System.out.println(STR."Invalid move: Crossing word '\{crossWord}' is not in dictionary");
+                    return new ArrayList<>();
                 }
 
-                // Add valid crossing word
                 formedWords.add(crossWord);
             }
         }
@@ -329,15 +277,6 @@ public class Game {
         return formedWords;
     }
 
-    /**
-     * Finds the starting position of a word on the board.
-     *
-     * @param board The game board
-     * @param row The row position
-     * @param col The column position
-     * @param isHorizontal Whether to look horizontally or vertically
-     * @return The starting position (row or column) of the word
-     */
     private int findWordStart(Board board, int row, int col, boolean isHorizontal) {
         int position = isHorizontal ? col : row;
 
@@ -355,15 +294,6 @@ public class Game {
         return position;
     }
 
-    /**
-     * Gets a word from the board at a specific position and direction.
-     *
-     * @param board The game board
-     * @param row The starting row
-     * @param col The starting column
-     * @param isHorizontal Whether the word is horizontal
-     * @return The word as a string
-     */
     private String getWordAt(Board board, int row, int col, boolean isHorizontal) {
         StringBuilder word = new StringBuilder();
 

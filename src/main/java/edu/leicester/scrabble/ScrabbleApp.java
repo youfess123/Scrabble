@@ -1,6 +1,5 @@
 package edu.leicester.scrabble;
 
-import com.sun.tools.javac.Main;
 import edu.leicester.scrabble.controller.GameController;
 import edu.leicester.scrabble.model.Game;
 import edu.leicester.scrabble.model.Player;
@@ -12,11 +11,8 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * Main application class for the Scrabble game.
- */
-public class ScrabbleApp extends Application {
 
+public class ScrabbleApp extends Application {
     private Game game;
     private GameController gameController;
 

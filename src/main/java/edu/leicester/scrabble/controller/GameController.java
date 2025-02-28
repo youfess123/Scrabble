@@ -2,7 +2,6 @@ package edu.leicester.scrabble.controller;
 
 import edu.leicester.scrabble.model.*;
 import edu.leicester.scrabble.util.ScrabbleConstants;
-import edu.leicester.scrabble.util.WordScoreCalculator;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
@@ -11,8 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.TreeMap;
 import java.util.concurrent.*;
 
@@ -44,10 +41,9 @@ public class GameController {
         this.selectedPositions = new ArrayList<>();
         this.gameInProgress = false;
 
-        // Create computer players for any AI players
         for (Player player : game.getPlayers()) {
             if (player.isComputer()) {
-                computerPlayers.add(new edu.leicester.scrabble.model.ComputerPlayer(player, 2)); // Medium difficulty
+                computerPlayers.add(new ComputerPlayer(player, 2)); // Medium difficulty
             }
         }
     }

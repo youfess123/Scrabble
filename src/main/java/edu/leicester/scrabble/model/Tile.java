@@ -39,14 +39,13 @@ public class Tile {
 
     @Override
     public String toString() {
-        return isBlank ? (letter + "(Blank)") : String.valueOf(letter);
+        return isBlank ? (STR."\{letter}(Blank)") : String.valueOf(letter);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
-
         Tile other = (Tile) obj;
         return letter == other.letter && value == other.value && isBlank == other.isBlank;
     }

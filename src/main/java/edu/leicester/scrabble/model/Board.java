@@ -55,23 +55,19 @@ public class Board {
     }
     public Square getSquare(int row, int col) {
         if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
-            throw new IndexOutOfBoundsException("Invalid position: (" + row + ", " + col + ")");
+            throw new IndexOutOfBoundsException(STR."Invalid position: (\{row}, \{col})");
         }
         return board[row][col];
     }
 
-    public boolean placeTile(int row, int col, Tile tile) {
+    public void placeTile(int row, int col, Tile tile) {
         Square square = getSquare(row, col);
         if(square.hasTile()){
-            return false;
+            return;
         }
         square.setTile(tile);
-        return true;
     }
 
-    public Tile removeTile(int row, int col) { //rewind button potential
-        return getSquare(row, col).removeTile();
-    }
 
     public List<Square> getAdjacentOccupiedSquares(int row, int col) {
         List<Square> adjacent = new ArrayList<>();
@@ -99,22 +95,18 @@ public class Board {
         return !getAdjacentOccupiedSquares(row, col).isEmpty();
     }
 
-    // In Board.java
     public List<Square> getHorizontalWord(int row, int col) {
         List<Square> word = new ArrayList<>();
 
-        // Skip if the starting position doesn't have a tile
         if (!getSquare(row, col).hasTile()) {
             return word;
         }
 
-        // Find the leftmost position of the word
         int startCol = col;
         while (startCol > 0 && getSquare(row, startCol - 1).hasTile()) {
             startCol--;
         }
 
-        // Collect all tiles from left to right
         int currentCol = startCol;
         while (currentCol < SIZE && getSquare(row, currentCol).hasTile()) {
             word.add(getSquare(row, currentCol));
