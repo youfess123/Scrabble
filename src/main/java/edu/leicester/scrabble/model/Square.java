@@ -71,11 +71,6 @@ public class Square {
         this.tile = tile;
     }
 
-    public Tile removeTile() {
-        Tile removed = tile;
-        tile = null;
-        return removed;
-    }
 
     public void useSquareType() {
         SquareTypeUsed = true;
@@ -83,14 +78,6 @@ public class Square {
 
     public boolean isSquareTypeUsed() {
         return SquareTypeUsed;
-    }
-
-    public int getLetterMultiplier() {
-        return SquareTypeUsed ? 1 : squareType.getLetterMultiplier();
-    }
-
-    public int getWordMultiplier() {
-        return SquareTypeUsed ? 1 : squareType.getWordMultiplier();
     }
 
     @Override

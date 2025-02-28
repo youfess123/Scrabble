@@ -1,22 +1,22 @@
 package edu.leicester.scrabble;
 
-import com.sun.tools.javac.Main;
 import edu.leicester.scrabble.controller.GameController;
+import edu.leicester.scrabble.model.Dictionary;
 import edu.leicester.scrabble.model.Game;
 import edu.leicester.scrabble.model.Player;
-import edu.leicester.scrabble.util.FileLoader;
+import edu.leicester.scrabble.util.ScrabbleConstants;
 import edu.leicester.scrabble.view.GameView;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * Main application class for the Scrabble game.
- */
-public class ScrabbleApp extends Application {
 
+public class ScrabbleApp extends Application {
     private Game game;
     private GameController gameController;
 
@@ -45,8 +45,9 @@ public class ScrabbleApp extends Application {
         }
     }
 
+
     private void initGame() throws IOException {
-        InputStream dictionaryStream = FileLoader.loadDefaultDictionary();
+        InputStream dictionaryStream = Dictionary.loadDefaultDictionary();
 
         game = new Game(dictionaryStream, "Dictionary.txt");
 

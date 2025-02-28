@@ -24,16 +24,15 @@ public class Move {
     private int startRow;
     private int startCol;
     private final List<Tile> tiles;
-    private final List<Character> placedLetters;
     private int score;
     private List<String> formedWords;
-    private Map<String, Object> metadata;
+    private final Map<String, Object> metadata;
 
     public Move(Player player, Type type) {
         this.player = player;
         this.type = type;
         this.tiles = new ArrayList<>();
-        this.placedLetters = new ArrayList<>();
+        List<Character> placedLetters = new ArrayList<>();
         this.formedWords = new ArrayList<>();
         this.score = 0;
         this.metadata = new HashMap<>();
@@ -81,9 +80,6 @@ public class Move {
         return new ArrayList<>(tiles);
     }
 
-    public void addTile(Tile tile) {
-        tiles.add(tile);
-    }
 
     public void addTiles(List<Tile> tilesToAdd) {
         tiles.addAll(tilesToAdd);
@@ -109,15 +105,6 @@ public class Move {
         metadata.put(key, value);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> T getMetadata(String key) {
-        return (T) metadata.get(key);
-    }
-
-
-    public boolean hasMetadata(String key) {
-        return metadata.containsKey(key);
-    }
 
     @Override
     public String toString() {

@@ -47,7 +47,7 @@ public class Rack {
                 count++;
             } else {
                 System.out.println("WARNING: Failed to add tile " + tile.getLetter());
-                break;  // Rack is full
+                break;
             }
         }
 
@@ -55,21 +55,10 @@ public class Rack {
         return count;
     }
 
-    public Tile removeTile(int index) {
-        if (index < 0 || index >= tiles.size()) {
-            System.out.println("WARNING: Invalid tile index to remove: " + index);
-            return null;
-        }
-
-        Tile removed = tiles.remove(index);
-        System.out.println("Rack: Removed tile at index " + index + ". Rack size now: " + tiles.size());
-        return removed;
-    }
-
-    public boolean removeTile(Tile tile) {
+    public void removeTile(Tile tile) {
         if (tile == null) {
             System.out.println("WARNING: Attempting to remove null tile");
-            return false;
+            return;
         }
 
         boolean result = tiles.remove(tile);
@@ -78,7 +67,6 @@ public class Rack {
         } else {
             System.out.println("WARNING: Tile " + tile.getLetter() + " not found in rack");
         }
-        return result;
     }
 
     public boolean removeTiles(List<Tile> tilesToRemove) {
@@ -89,14 +77,10 @@ public class Rack {
 
         System.out.println("Rack: Attempting to remove " + tilesToRemove.size() + " tiles. Current size: " + tiles.size());
 
-        // FIX: Create a copy of tilesToRemove to avoid concurrent modification
         List<Tile> tilesToRemoveCopy = new ArrayList<>(tilesToRemove);
-        int initialSize = tiles.size();
         int removedCount = 0;
 
-        // FIX: Iterate over the rack tiles by index and letter to find matching tiles
         for (Tile tileToRemove : tilesToRemoveCopy) {
-            // Find a tile in the rack with the same letter
             boolean found = false;
             for (int i = 0; i < tiles.size(); i++) {
                 Tile rackTile = tiles.get(i);
@@ -109,7 +93,6 @@ public class Rack {
                     break;
                 }
             }
-
             if (!found) {
                 System.out.println("WARNING: Could not find matching tile for " + tileToRemove.getLetter());
             }
@@ -144,52 +127,6 @@ public class Rack {
 
     public int getEmptySlots() {
         return RACK_SIZE - tiles.size();
-    }
-
-    public boolean containsLetter(char letter) {
-        letter = Character.toUpperCase(letter);
-        for (Tile tile : tiles) {
-            if (tile.getLetter() == letter) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public int getIndexOfLetter(char letter) {
-        letter = Character.toUpperCase(letter);
-        for (int i = 0; i < tiles.size(); i++) {
-            if (tiles.get(i).getLetter() == letter) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public boolean containsBlank() {
-        for (Tile tile : tiles) {
-            if (tile.isBlank()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public int getIndexOfBlank() {
-        for (int i = 0; i < tiles.size(); i++) {
-            if (tiles.get(i).isBlank()) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public boolean swapTiles(int index1, int index2) {
-        if (index1 < 0 || index1 >= tiles.size() || index2 < 0 || index2 >= tiles.size()) {
-            return false;
-        }
-        Collections.swap(tiles, index1, index2);
-        return true;
     }
 
     public void shuffle() {

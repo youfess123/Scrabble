@@ -36,37 +36,18 @@ public class GameView extends BorderPane {
     private VBox createBottomPane() {
         VBox bottomPane = new VBox(10);
         bottomPane.setPadding(new Insets(10, 0, 0, 0));
-
-        // Add rack view
-        bottomPane.getChildren().add(rackView);
-
-        // Add control panel
-        bottomPane.getChildren().add(controlPanel);
-
+        bottomPane.getChildren().addAll(rackView, controlPanel);
         return bottomPane;
     }
 
     private void setupListeners() {
-        // Update board when board changes
-        controller.setBoardUpdateListener(() -> {
-            boardView.updateBoard();
-        });
-
-        // Update rack when rack changes
-        controller.setRackUpdateListener(() -> {
-            rackView.updateRack();
-        });
-
-        // Update player info when current player changes
+        controller.setBoardUpdateListener(() -> boardView.updateBoard());
+        controller.setRackUpdateListener(() -> rackView.updateRack());
         controller.setPlayerUpdateListener(() -> {
             gameInfoView.updatePlayerInfo();
             rackView.updateRack();
         });
-
-        // Show game over dialog when game ends
-        controller.setGameOverListener(() -> {
-            showGameOverDialog();
-        });
+        controller.setGameOverListener(this::showGameOverDialog);
     }
 
     private void showGameOverDialog() {
@@ -74,24 +55,19 @@ public class GameView extends BorderPane {
         alert.setTitle("Game Over");
         alert.setHeaderText("The game has ended!");
 
-        // Find the winner
         String winnerText = "Final scores:\n";
         int highestScore = -1;
         String winner = "";
-
         for (var player : controller.getPlayers()) {
             int score = player.getScore();
             winnerText += player.getName() + ": " + score + "\n";
-
             if (score > highestScore) {
                 highestScore = score;
                 winner = player.getName();
             }
         }
-
         winnerText += "\nWinner: " + winner + "!";
         alert.setContentText(winnerText);
-
         alert.showAndWait();
     }
 
@@ -106,21 +82,18 @@ public class GameView extends BorderPane {
             setPadding(new Insets(10));
             setStyle("-fx-background-color: #e0e0e0; -fx-border-color: #cccccc; -fx-border-radius: 5;");
 
-            // Play button
             playButton = new Button("Play Word");
             playButton.setOnAction(e -> {
                 boolean success = controller.commitPlacement();
                 if (!success) {
-                    // Check if there are any placements at all
                     if (controller.getTemporaryPlacements().isEmpty()) {
                         showError("No tiles placed. Please place tiles on the board first.");
                     } else {
-                        showError("Invalid word placement. Please ensure your tiles form valid English words according to the Scrabble dictionary.");
+                        showError("Invalid word placement. Ensure your tiles form valid English words.");
                     }
                 }
             });
 
-            // Cancel button
             cancelButton = new Button("Cancel Placement");
             cancelButton.setOnAction(e -> {
                 if (!controller.getTemporaryPlacements().isEmpty()) {
@@ -131,7 +104,6 @@ public class GameView extends BorderPane {
                 }
             });
 
-            // Exchange button
             exchangeButton = new Button("Exchange Tiles");
             exchangeButton.setOnAction(e -> {
                 if (controller.getTemporaryPlacements().isEmpty()) {
@@ -139,9 +111,6 @@ public class GameView extends BorderPane {
                         showError("No tiles selected. Please select tiles from your rack to exchange.");
                     } else {
                         boolean success = controller.exchangeTiles();
-
-                        // We don't need to show feedback here as the controller will now
-                        // display a confirmation dialog that shows the new tiles
                         if (!success) {
                             showError("Exchange failed. There may not be enough tiles in the bag.");
                         }
@@ -151,7 +120,6 @@ public class GameView extends BorderPane {
                 }
             });
 
-            // Pass button
             passButton = new Button("Pass Turn");
             passButton.setOnAction(e -> {
                 if (controller.getTemporaryPlacements().isEmpty()) {
@@ -164,24 +132,18 @@ public class GameView extends BorderPane {
                 }
             });
 
-            // Add buttons to panel
             getChildren().addAll(playButton, cancelButton, exchangeButton, passButton);
-
-            // Make buttons equal width
             for (var node : getChildren()) {
                 HBox.setHgrow(node, Priority.ALWAYS);
                 ((Button) node).setMaxWidth(Double.MAX_VALUE);
             }
-
-            // Add tooltip text
-            playButton.setTooltip(new Tooltip("Confirm and play the word with your placed tiles"));
-            cancelButton.setTooltip(new Tooltip("Cancel your current tile placement and return tiles to your rack"));
-            exchangeButton.setTooltip(new Tooltip("Exchange selected tiles for new ones from the bag"));
-            passButton.setTooltip(new Tooltip("Pass your turn to the next player"));
+            playButton.setTooltip(new Tooltip("Confirm and play the word"));
+            cancelButton.setTooltip(new Tooltip("Cancel tile placement"));
+            exchangeButton.setTooltip(new Tooltip("Exchange selected tiles for new ones"));
+            passButton.setTooltip(new Tooltip("Pass your turn"));
         }
 
         public void updateButtonStates() {
-            // Enable/disable buttons based on game state
             Player currentPlayer = controller.getCurrentPlayer();
             boolean isPlayerTurn = !currentPlayer.isComputer();
             boolean hasTemporaryPlacements = !controller.getTemporaryPlacements().isEmpty();

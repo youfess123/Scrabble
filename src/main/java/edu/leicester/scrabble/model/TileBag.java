@@ -15,38 +15,43 @@ public class TileBag {
             this.value = value;
         }
 
-        public int getCount() { return count; }
-        public int getValue() { return value; }
+        public int getCount() {
+            return count;
+        }
+
+        public int getValue() {
+            return value;
+        }
     }
 
-    private static final Map<Character, LetterInfo> LETTER_DATA = new HashMap<>();{
-        LETTER_DATA.put('A',new LetterInfo(9,1));
-        LETTER_DATA.put('B',new LetterInfo(2,3));
-        LETTER_DATA.put('C',new LetterInfo(2,3));
-        LETTER_DATA.put('D',new LetterInfo(4,2));
-        LETTER_DATA.put('E',new LetterInfo(12,1));
-        LETTER_DATA.put('F',new LetterInfo(2,4));
-        LETTER_DATA.put('G',new LetterInfo(3,2));
-        LETTER_DATA.put('H',new LetterInfo(2,4));
-        LETTER_DATA.put('I',new LetterInfo(9,1));
-        LETTER_DATA.put('J',new LetterInfo(1,8));
-        LETTER_DATA.put('K',new LetterInfo(1,5));
-        LETTER_DATA.put('L',new LetterInfo(4,1));
-        LETTER_DATA.put('M',new LetterInfo(2,3));
-        LETTER_DATA.put('N',new LetterInfo(6,1));
-        LETTER_DATA.put('O',new LetterInfo(8,1));
-        LETTER_DATA.put('P',new LetterInfo(2,3));
-        LETTER_DATA.put('Q',new LetterInfo(1,10));
-        LETTER_DATA.put('R',new LetterInfo(6,1));
-        LETTER_DATA.put('S',new LetterInfo(4,1));
-        LETTER_DATA.put('T',new LetterInfo(6,1));
-        LETTER_DATA.put('U',new LetterInfo(4,1));
-        LETTER_DATA.put('V',new LetterInfo(2,4));
-        LETTER_DATA.put('W',new LetterInfo(2,4));
-        LETTER_DATA.put('X',new LetterInfo(1,8));
-        LETTER_DATA.put('Y',new LetterInfo(2,4));
-        LETTER_DATA.put('Z',new LetterInfo(1,10));
-        LETTER_DATA.put('*',new LetterInfo(2,0));
+    private static final Map<Character, LetterInfo> LETTER_DATA = new HashMap<>(); {
+        LETTER_DATA.put('A', new LetterInfo(9, 1));
+        LETTER_DATA.put('B', new LetterInfo(2, 3));
+        LETTER_DATA.put('C', new LetterInfo(2, 3));
+        LETTER_DATA.put('D', new LetterInfo(4, 2));
+        LETTER_DATA.put('E', new LetterInfo(12, 1));
+        LETTER_DATA.put('F', new LetterInfo(2, 4));
+        LETTER_DATA.put('G', new LetterInfo(3, 2));
+        LETTER_DATA.put('H', new LetterInfo(2, 4));
+        LETTER_DATA.put('I', new LetterInfo(9, 1));
+        LETTER_DATA.put('J', new LetterInfo(1, 8));
+        LETTER_DATA.put('K', new LetterInfo(1, 5));
+        LETTER_DATA.put('L', new LetterInfo(4, 1));
+        LETTER_DATA.put('M', new LetterInfo(2, 3));
+        LETTER_DATA.put('N', new LetterInfo(6, 1));
+        LETTER_DATA.put('O', new LetterInfo(8, 1));
+        LETTER_DATA.put('P', new LetterInfo(2, 3));
+        LETTER_DATA.put('Q', new LetterInfo(1, 10));
+        LETTER_DATA.put('R', new LetterInfo(6, 1));
+        LETTER_DATA.put('S', new LetterInfo(4, 1));
+        LETTER_DATA.put('T', new LetterInfo(6, 1));
+        LETTER_DATA.put('U', new LetterInfo(4, 1));
+        LETTER_DATA.put('V', new LetterInfo(2, 4));
+        LETTER_DATA.put('W', new LetterInfo(2, 4));
+        LETTER_DATA.put('X', new LetterInfo(1, 8));
+        LETTER_DATA.put('Y', new LetterInfo(2, 4));
+        LETTER_DATA.put('Z', new LetterInfo(1, 10));
+        LETTER_DATA.put('*', new LetterInfo(2, 0));
     }
 
     public TileBag() {
@@ -59,11 +64,9 @@ public class TileBag {
     private void initialiseTiles() {
         for (Map.Entry<Character, LetterInfo> entry : LETTER_DATA.entrySet()) {
             char letter = entry.getKey();
-
-            LetterInfo  info = LETTER_DATA.get(letter);
+            LetterInfo info = LETTER_DATA.get(letter);
             int count = info.getCount();
             int value = info.getValue();
-
             for (int i = 0; i < count; i++) {
                 tiles.add(new Tile(letter, value));
             }
@@ -81,14 +84,9 @@ public class TileBag {
         }
 
         int beforeCount = tiles.size();
-
-        // Add all tiles back to the bag
         this.tiles.addAll(tilesToReturn);
-
         int afterCount = tiles.size();
         System.out.println("TileBag: Added " + (afterCount - beforeCount) + " tiles to bag");
-
-        // Shuffle the bag to randomize the tiles
         shuffle();
     }
 
@@ -102,9 +100,7 @@ public class TileBag {
 
         System.out.println("TileBag: Attempting to draw " + count + " tiles. Available: " + tiles.size());
 
-        // Can't draw more tiles than available
         int tilesToDraw = Math.min(count, tiles.size());
-
         for (int i = 0; i < tilesToDraw; i++) {
             Tile tile = drawTile();
             if (tile != null) {
@@ -113,7 +109,6 @@ public class TileBag {
         }
 
         System.out.println("TileBag: Drew " + drawnTiles.size() + " tiles. Remaining: " + tiles.size());
-
         return drawnTiles;
     }
 
@@ -137,20 +132,8 @@ public class TileBag {
         letter = Character.toUpperCase(letter);
         LetterInfo info = LETTER_DATA.get(letter);
         if (info == null) {
-            return 0; // Return 0 for blank tiles or unknown letters
+            return 0;
         }
         return info.getValue();
     }
-
-
-    public Map<Character, Integer> getRemainingDistribution() {
-        Map<Character, Integer> distribution = new HashMap<>();
-        for (Tile tile : tiles) {
-            char letter = tile.getLetter();
-            distribution.put(letter, distribution.getOrDefault(letter, 0) + 1);
-        }
-        return distribution;
-    }
-
-
 }
