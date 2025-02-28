@@ -99,15 +99,23 @@ public class Board {
         return !getAdjacentOccupiedSquares(row, col).isEmpty();
     }
 
+    // In Board.java
     public List<Square> getHorizontalWord(int row, int col) {
         List<Square> word = new ArrayList<>();
 
+        // Skip if the starting position doesn't have a tile
+        if (!getSquare(row, col).hasTile()) {
+            return word;
+        }
+
+        // Find the leftmost position of the word
         int startCol = col;
-        while(startCol > 0 && getSquare(row, startCol-1).hasTile()){
+        while (startCol > 0 && getSquare(row, startCol - 1).hasTile()) {
             startCol--;
         }
 
-        int currentCol = col;
+        // Collect all tiles from left to right
+        int currentCol = startCol;
         while (currentCol < SIZE && getSquare(row, currentCol).hasTile()) {
             word.add(getSquare(row, currentCol));
             currentCol++;
@@ -119,11 +127,18 @@ public class Board {
     public List<Square> getVerticalWord(int row, int col) {
         List<Square> word = new ArrayList<>();
 
+        // Skip if the starting position doesn't have a tile
+        if (!getSquare(row, col).hasTile()) {
+            return word;
+        }
+
+        // Find the topmost position of the word
         int startRow = row;
         while (startRow > 0 && getSquare(startRow - 1, col).hasTile()) {
             startRow--;
         }
 
+        // Collect all tiles from top to bottom
         int currentRow = startRow;
         while (currentRow < SIZE && getSquare(currentRow, col).hasTile()) {
             word.add(getSquare(currentRow, col));

@@ -378,15 +378,6 @@ public class GameController {
         });
     }
 
-    /**
-     * Places a tile temporarily on the board.
-     * Enhanced to use GADDAG for placement validation.
-     *
-     * @param rackIndex Index of the tile in the player's rack
-     * @param row Row position on the board
-     * @param col Column position on the board
-     * @return true if the placement was valid
-     */
     public boolean placeTileTemporarily(int rackIndex, int row, int col) {
         try {
             if (row < 0 || row >= Board.SIZE || col < 0 || col >= Board.SIZE) {
@@ -436,14 +427,6 @@ public class GameController {
         return temporaryPlacements.get(new Point(row, col));
     }
 
-    /**
-     * Validates if a temporary tile placement is valid.
-     * Enhanced to better handle extending existing words with GADDAG logic.
-     *
-     * @param row The row position
-     * @param col The column position
-     * @return true if the placement is valid
-     */
     public boolean isValidTemporaryPlacement(int row, int col) {
         Board board = game.getBoard();
         Dictionary dictionary = game.getDictionary();
@@ -576,12 +559,6 @@ public class GameController {
                 extendsHorizontalWord || extendsVerticalWord;
     }
 
-    /**
-     * Determines the direction of the current word placement.
-     * Enhanced to better handle single tile extensions of existing words.
-     *
-     * @return The direction (HORIZONTAL or VERTICAL) or null if undetermined
-     */
     public Move.Direction determineDirection() {
         // If there are less than 2 temporary tiles, try to determine from board context
         if (temporaryPlacements.size() <= 1) {
@@ -702,17 +679,9 @@ public class GameController {
         return null;
     }
 
-    /**
-     * Identifies all words formed by the current placement.
-     * Enhanced with GADDAG for better word identification including extensions.
-     *
-     * @param move The move being evaluated
-     * @return List of words formed
-     */
     private List<String> calculateFormedWords(Move move) {
         List<String> formedWords = new ArrayList<>();
         Board board = game.getBoard();
-        Dictionary dictionary = game.getDictionary();
         int row = move.getStartRow();
         int col = move.getStartCol();
 
@@ -729,10 +698,10 @@ public class GameController {
             }
         }
 
-        // Place the new tiles
+        // Place the new tiles and keep track of their positions
+        List<Point> newTilePositions = new ArrayList<>();
         int currentRow = row;
         int currentCol = col;
-        List<Point> newTilePositions = new ArrayList<>();
 
         for (Tile tile : move.getTiles()) {
             // Skip squares that already have tiles
@@ -743,17 +712,110 @@ public class GameController {
                 } else {
                     currentRow++;
                 }
+            }
 
-                // Check bounds
-                if (currentRow >= Board.SIZE || currentCol >= Board.SIZE) {
-                    break;
+            // Check bounds
+            if (currentRow >= Board.SIZE || currentCol >= Board.SIZE) {
+                break;
+            }
+
+            // Place the tile and record its position
+            tempBoard.placeTile(currentRow, currentCol, tile);
+            newTilePositions.add(new Point(currentRow, currentCol));
+
+            // Move to next position
+            if (move.getDirection() == Move.Direction.HORIZONTAL) {
+                currentCol++;
+            } else {
+                currentRow++;
+            }
+        }
+
+        // Find the main word in the direction of play
+        String mainWord = "";
+        if (move.getDirection() == Move.Direction.HORIZONTAL) {
+            List<Square> wordSquares = tempBoard.getHorizontalWord(row, col);
+            if (!wordSquares.isEmpty()) {
+                mainWord = Board.getWordString(wordSquares);
+                formedWords.add(mainWord);
+            }
+        } else {
+            List<Square> wordSquares = tempBoard.getVerticalWord(row, col);
+            if (!wordSquares.isEmpty()) {
+                mainWord = Board.getWordString(wordSquares);
+                formedWords.add(mainWord);
+            }
+        }
+
+        System.out.println("Main word formed: " + mainWord);
+
+        // Find crossing words formed by each new tile
+        for (Point p : newTilePositions) {
+            List<Square> crossingWord;
+            if (move.getDirection() == Move.Direction.HORIZONTAL) {
+                // For horizontal plays, check for vertical crossing words
+                crossingWord = tempBoard.getVerticalWord(p.x, p.y);
+            } else {
+                // For vertical plays, check for horizontal crossing words
+                crossingWord = tempBoard.getHorizontalWord(p.x, p.y);
+            }
+
+            // Only add words with at least 2 letters
+            if (crossingWord.size() >= 2) {
+                String crossWord = Board.getWordString(crossingWord);
+                // Avoid adding the main word twice
+                if (!crossWord.equals(mainWord)) {
+                    System.out.println("Crossing word formed: " + crossWord);
+                    formedWords.add(crossWord);
+                }
+            }
+        }
+
+        return formedWords;
+    }
+
+    public boolean validateWords(Move move) {
+        Board board = game.getBoard();
+        Dictionary dictionary = game.getDictionary();
+
+        List<String> formedWords = calculateFormedWords(move);
+        if (formedWords.isEmpty()) {
+            System.out.println("Invalid move: No valid words formed");
+            return false;
+        }
+
+        Map<String, List<Square>> wordSquaresMap = new HashMap<>();
+
+        // Temporarily place the tiles to identify the squares for each word
+        Board tempBoard = new Board();
+
+        // Copy existing board state
+        for (int r = 0; r < Board.SIZE; r++) {
+            for (int c = 0; c < Board.SIZE; c++) {
+                Square square = board.getSquare(r, c);
+                if (square.hasTile()) {
+                    tempBoard.placeTile(r, c, square.getTile());
+                }
+            }
+        }
+
+        // Place the new tiles
+        int currentRow = move.getStartRow();
+        int currentCol = move.getStartCol();
+
+        for (Tile tile : move.getTiles()) {
+            // Skip positions that already have tiles
+            while (currentRow < Board.SIZE && currentCol < Board.SIZE &&
+                    tempBoard.getSquare(currentRow, currentCol).hasTile()) {
+                if (move.getDirection() == Move.Direction.HORIZONTAL) {
+                    currentCol++;
+                } else {
+                    currentRow++;
                 }
             }
 
-            // Place the tile
             if (currentRow < Board.SIZE && currentCol < Board.SIZE) {
                 tempBoard.placeTile(currentRow, currentCol, tile);
-                newTilePositions.add(new Point(currentRow, currentCol));
 
                 // Move to next position
                 if (move.getDirection() == Move.Direction.HORIZONTAL) {
@@ -764,223 +826,25 @@ public class GameController {
             }
         }
 
-        // Special case for single tile placement - check both directions
-        if (move.getTiles().size() == 1 && newTilePositions.size() == 1) {
-            Point p = newTilePositions.get(0);
+        // Get the squares for each formed word and validate against dictionary
+        for (String word : formedWords) {
+            // Find the word on the board
+            List<Square> wordSquares = findWordSquares(tempBoard, word);
 
-            // Get both possible words
-            List<Square> horizontalWord = tempBoard.getHorizontalWord(p.x, p.y);
-            List<Square> verticalWord = tempBoard.getVerticalWord(p.x, p.y);
-
-            // Add horizontal word if valid (at least 2 letters)
-            if (horizontalWord.size() >= 2) {
-                String horizontalWordStr = Board.getWordString(horizontalWord);
-                formedWords.add(horizontalWordStr);
-            }
-
-            // Add vertical word if valid (at least 2 letters)
-            if (verticalWord.size() >= 2) {
-                String verticalWordStr = Board.getWordString(verticalWord);
-                // Don't add duplicate words
-                if (!formedWords.contains(verticalWordStr)) {
-                    formedWords.add(verticalWordStr);
-                }
-            }
-
-            return formedWords;
-        }
-
-        // For multi-tile placements, find the main word first
-        List<Square> mainWord;
-        if (move.getDirection() == Move.Direction.HORIZONTAL) {
-            mainWord = tempBoard.getHorizontalWord(row, col);
-        } else {
-            mainWord = tempBoard.getVerticalWord(row, col);
-        }
-
-        if (mainWord.size() >= 2) {
-            formedWords.add(Board.getWordString(mainWord));
-        }
-
-        // Find any crossing words formed by each new tile
-        for (Point p : newTilePositions) {
-            List<Square> crossingWord;
-
-            // Check for a crossing word perpendicular to the direction of play
-            if (move.getDirection() == Move.Direction.HORIZONTAL) {
-                crossingWord = tempBoard.getVerticalWord(p.x, p.y);
-            } else {
-                crossingWord = tempBoard.getHorizontalWord(p.x, p.y);
-            }
-
-            // Only add crossing words that are at least 2 letters long
-            if (crossingWord.size() >= 2) {
-                String crossWordStr = Board.getWordString(crossingWord);
-                if (!formedWords.contains(crossWordStr)) {
-                    formedWords.add(crossWordStr);
-                }
-            }
-        }
-
-        return formedWords;
-    }
-
-    /**
-     * Validates all words formed by a move.
-     * Enhanced with GADDAG-based validation.
-     *
-     * @param move The move to validate
-     * @return true if all formed words are valid, false otherwise
-     */
-    public boolean validateWords(Move move) {
-        Board board = game.getBoard();
-        Dictionary dictionary = game.getDictionary();
-
-        List<String> formedWords = new ArrayList<>();
-        Map<String, List<Square>> wordSquaresMap = new HashMap<>();
-
-        int row = move.getStartRow();
-        int col = move.getStartCol();
-        Move.Direction direction = move.getDirection();
-
-        Board tempBoard = new Board();
-
-        // Copy the current board state
-        for (int r = 0; r < Board.SIZE; r++) {
-            for (int c = 0; c < Board.SIZE; c++) {
-                Square square = board.getSquare(r, c);
-                if (square.hasTile()) {
-                    tempBoard.placeTile(r, c, square.getTile());
-                }
-            }
-        }
-
-        List<Point> newTilePositions = new ArrayList<>();
-
-        // Place the new tiles on the temporary board
-        if (direction == Move.Direction.HORIZONTAL) {
-            int c = col;
-            for (Tile tile : move.getTiles()) {
-                // Skip positions that already have tiles
-                while (c < Board.SIZE && tempBoard.getSquare(row, c).hasTile()) {
-                    c++;
-                }
-
-                if (c < Board.SIZE) {
-                    tempBoard.placeTile(row, c, tile);
-                    newTilePositions.add(new Point(row, c));
-                    c++;
-                }
-            }
-        } else {
-            int r = row;
-            for (Tile tile : move.getTiles()) {
-                // Skip positions that already have tiles
-                while (r < Board.SIZE && tempBoard.getSquare(r, col).hasTile()) {
-                    r++;
-                }
-
-                if (r < Board.SIZE) {
-                    tempBoard.placeTile(r, col, tile);
-                    newTilePositions.add(new Point(r, col));
-                    r++;
-                }
-            }
-        }
-
-        // Special case for single tile placement - check both directions
-        if (move.getTiles().size() == 1 && newTilePositions.size() == 1) {
-            Point p = newTilePositions.get(0);
-
-            // Check horizontal word
-            List<Square> horizontalWord = tempBoard.getHorizontalWord(p.x, p.y);
-            if (horizontalWord.size() >= 2) {
-                String horizontalWordStr = Board.getWordString(horizontalWord);
-                if (dictionary.isValidWord(horizontalWordStr)) {
-                    formedWords.add(horizontalWordStr);
-                    wordSquaresMap.put(horizontalWordStr, horizontalWord);
-                }
-            }
-
-            // Check vertical word
-            List<Square> verticalWord = tempBoard.getVerticalWord(p.x, p.y);
-            if (verticalWord.size() >= 2) {
-                String verticalWordStr = Board.getWordString(verticalWord);
-                if (dictionary.isValidWord(verticalWordStr)) {
-                    // Avoid duplicates
-                    if (!formedWords.contains(verticalWordStr)) {
-                        formedWords.add(verticalWordStr);
-                        wordSquaresMap.put(verticalWordStr, verticalWord);
-                    }
-                }
-            }
-
-            // Make sure at least one valid word was formed
-            if (formedWords.isEmpty()) {
-                System.out.println("Invalid move: No valid words formed with single tile");
+            if (wordSquares.isEmpty()) {
+                System.out.println("Error: Could not find squares for word: " + word);
                 return false;
             }
 
-            // If we get here, the move is valid
-            move.setFormedWords(formedWords);
-            move.setMetadata("wordSquares", wordSquaresMap);
-
-            // Calculate score
-            int score = calculateMoveScore(move, tempBoard, wordSquaresMap);
-            move.setScore(score);
-
-            return true;
-        }
-
-        // For multi-tile placements, check the main word first
-        List<Square> mainWord;
-        if (direction == Move.Direction.HORIZONTAL) {
-            mainWord = tempBoard.getHorizontalWord(row, col);
-        } else {
-            mainWord = tempBoard.getVerticalWord(row, col);
-        }
-
-        // The main word must be at least 2 letters long
-        if (mainWord.isEmpty() || mainWord.size() < 2) {
-            System.out.println("Invalid move: Main word is too short");
-            return false;
-        }
-
-        String mainWordStr = Board.getWordString(mainWord);
-        if (!dictionary.isValidWord(mainWordStr)) {
-            System.out.println("Invalid move: Main word '" + mainWordStr + "' is not in dictionary");
-            return false;
-        }
-
-        formedWords.add(mainWordStr);
-        wordSquaresMap.put(mainWordStr, mainWord);
-
-        // Check any crossing words formed by each new tile
-        for (Point p : newTilePositions) {
-            List<Square> crossWord;
-
-            // Check for a crossing word perpendicular to the direction of play
-            if (direction == Move.Direction.HORIZONTAL) {
-                crossWord = tempBoard.getVerticalWord(p.x, p.y);
-            } else {
-                crossWord = tempBoard.getHorizontalWord(p.x, p.y);
+            if (!dictionary.isValidWord(word)) {
+                System.out.println("Invalid move: Word '" + word + "' is not in dictionary");
+                return false;
             }
 
-            // Only validate crossing words that are at least 2 letters long
-            if (crossWord.size() > 1) {
-                String crossWordStr = Board.getWordString(crossWord);
-
-                if (!dictionary.isValidWord(crossWordStr)) {
-                    System.out.println("Invalid move: Crossing word '" + crossWordStr + "' is not in dictionary");
-                    return false;
-                }
-
-                formedWords.add(crossWordStr);
-                wordSquaresMap.put(crossWordStr, crossWord);
-            }
+            wordSquaresMap.put(word, wordSquares);
         }
 
-        // If we got here, all words are valid
+        // All words are valid
         move.setFormedWords(formedWords);
         move.setMetadata("wordSquares", wordSquaresMap);
 
@@ -991,12 +855,30 @@ public class GameController {
         return true;
     }
 
-    /**
-     * Commits the current temporary placement as a move.
-     * Enhanced with GADDAG-based word detection and validation.
-     *
-     * @return true if the move was valid and successfully executed
-     */
+    // Helper method to find squares for a word on the board
+    private List<Square> findWordSquares(Board tempBoard, String word) {
+        // First try to find horizontally
+        for (int r = 0; r < Board.SIZE; r++) {
+            for (int c = 0; c < Board.SIZE; c++) {
+                List<Square> horizontal = tempBoard.getHorizontalWord(r, c);
+                if (!horizontal.isEmpty() && Board.getWordString(horizontal).equals(word)) {
+                    return horizontal;
+                }
+            }
+        }
+
+        // Then try vertically
+        for (int r = 0; r < Board.SIZE; r++) {
+            for (int c = 0; c < Board.SIZE; c++) {
+                List<Square> vertical = tempBoard.getVerticalWord(r, c);
+                if (!vertical.isEmpty() && Board.getWordString(vertical).equals(word)) {
+                    return vertical;
+                }
+            }
+        }
+
+        return new ArrayList<>();
+    }
     public boolean commitPlacement() {
         if (temporaryPlacements.isEmpty()) {
             return false;
