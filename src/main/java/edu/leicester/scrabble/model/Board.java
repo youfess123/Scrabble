@@ -22,6 +22,19 @@ public class Board {
         }
     }
 
+    public Board copy() {
+        Board copy = new Board();
+        for (int r = 0; r < SIZE; r++) {
+            for (int c = 0; c < SIZE; c++) {
+                Square square = getSquare(r, c);
+                if (square.hasTile()) {
+                    copy.placeTile(r, c, square.getTile());
+                }
+            }
+        }
+        return copy;
+    }
+
     private Square.SquareType getSquareTypeFor(int row, int col){
         if (row == 7 && col == 7){
             return Square.SquareType.CENTER;

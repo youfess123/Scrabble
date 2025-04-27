@@ -774,6 +774,11 @@ public class GameController {
         for (Square square : wordSquares) {
             Tile tile = square.getTile();
             int letterValue = tile.getValue();
+            // Always use 0 for blank tiles regardless of which letter they represent
+            if (tile.isBlank()) {
+                letterValue = 0;
+            }
+
             int effectiveValue = letterValue;
             if (isNewMove && !square.isSquareTypeUsed()) {
                 if (square.getSquareType() == Square.SquareType.DOUBLE_LETTER) {

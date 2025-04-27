@@ -375,6 +375,7 @@ public class WordFinder {
         return word.toString();
     }
 
+    // In WordFinder.java, replace the calculateScore method with this implementation:
     private int calculateScore(Board board, int startRow, int startCol, String word,
                                Move.Direction direction, Set<Point> newTilePositions,
                                List<String> crossWords) {
@@ -390,7 +391,9 @@ public class WordFinder {
             Square square = board.getSquare(currentRow, currentCol);
             Point currentPoint = new Point(currentRow, currentCol);
 
-            int letterValue = square.getTile().getValue();
+            Tile tile = square.getTile();
+            // Set letterValue to 0 for blank tiles regardless of the letter
+            int letterValue = tile.isBlank() ? 0 : tile.getValue();
             int letterScore = letterValue;
 
             if (newTilePositions.contains(currentPoint)) {
@@ -419,15 +422,94 @@ public class WordFinder {
 
         totalScore += wordScore * wordMultiplier;
 
+        // Add scores for crossing words
         for (String crossWord : crossWords) {
-            totalScore += crossWord.length() * 2;
+            int crossWordScore = calculateCrossWordScore(board, crossWord);
+            totalScore += crossWordScore;
         }
 
         if (newTilePositions.size() == 7) {
-            totalScore += 50; // Bingo bonus
+            totalScore += ScrabbleConstants.BINGO_BONUS; // 50 points bingo bonus
         }
 
         return totalScore;
+    }
+
+    // Add this helper method to calculate cross word scores
+    private int calculateCrossWordScore(Board board, String word) {
+        // Find the word on the board
+        Point wordPosition = findWordPosition(board, word);
+        if (wordPosition == null) return 0;
+
+        int row = wordPosition.x;
+        int col = wordPosition.y;
+        boolean isHorizontal = wordOrientation(board, row, col, word);
+
+        int score = 0;
+        int wordMultiplier = 1;
+
+        // Calculate the score for the cross word
+        for (int i = 0; i < word.length(); i++) {
+            Square square = board.getSquare(row, col);
+            Tile tile = square.getTile();
+
+            // Ensure blank tiles have a value of 0
+            int letterValue = tile.isBlank() ? 0 : tile.getValue();
+            int letterScore = letterValue;
+
+            if (!square.isSquareTypeUsed()) {
+                if (square.getSquareType() == Square.SquareType.DOUBLE_LETTER) {
+                    letterScore = letterValue * 2;
+                } else if (square.getSquareType() == Square.SquareType.TRIPLE_LETTER) {
+                    letterScore = letterValue * 3;
+                }
+
+                if (square.getSquareType() == Square.SquareType.DOUBLE_WORD ||
+                        square.getSquareType() == Square.SquareType.CENTER) {
+                    wordMultiplier *= 2;
+                } else if (square.getSquareType() == Square.SquareType.TRIPLE_WORD) {
+                    wordMultiplier *= 3;
+                }
+            }
+
+            score += letterScore;
+
+            if (isHorizontal) {
+                col++;
+            } else {
+                row++;
+            }
+        }
+
+        return score * wordMultiplier;
+    }
+
+    // Add helper method to find word position on board
+    private Point findWordPosition(Board board, String word) {
+        // Check horizontal words
+        for (int r = 0; r < Board.SIZE; r++) {
+            for (int c = 0; c < Board.SIZE; c++) {
+                if (getWordAt(board, r, c, Move.Direction.HORIZONTAL).equals(word)) {
+                    return new Point(r, c);
+                }
+            }
+        }
+
+        // Check vertical words
+        for (int r = 0; r < Board.SIZE; r++) {
+            for (int c = 0; c < Board.SIZE; c++) {
+                if (getWordAt(board, r, c, Move.Direction.VERTICAL).equals(word)) {
+                    return new Point(r, c);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // Helper method to determine word orientation
+    private boolean wordOrientation(Board board, int row, int col, String word) {
+        return getWordAt(board, row, col, Move.Direction.HORIZONTAL).equals(word);
     }
 
 

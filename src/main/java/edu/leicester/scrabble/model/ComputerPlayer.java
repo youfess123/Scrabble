@@ -499,6 +499,7 @@ public class ComputerPlayer {
         return result;
     }
 
+    // In ComputerPlayer.java, replace the calculateWordScore method with this implementation:
     private int calculateWordScore(String word, int startRow, int startCol, boolean isHorizontal, Board board) {
         int score = 0;
         int wordMultiplier = 1;
@@ -507,30 +508,48 @@ public class ComputerPlayer {
         for (int i = 0; i < word.length(); i++) {
             Square square = board.getSquare(row, col);
             char letter = word.charAt(i);
+
+            // Get the tile at this position (if any)
+            Tile tile = null;
+            if (square.hasTile()) {
+                tile = square.getTile();
+            }
+
+            // Determine letter value, accounting for blank tiles
             int letterValue = TileBag.getPointValue(letter);
+            if (tile != null && tile.isBlank()) {
+                letterValue = 0; // Blank tiles have a value of 0 regardless of the letter
+            }
+
+            int effectiveValue = letterValue;
             if (!square.hasTile() && !square.isSquareTypeUsed()) {
                 if (square.getSquareType() == Square.SquareType.DOUBLE_LETTER) {
-                    letterValue *= 2;
+                    effectiveValue *= 2;
                 } else if (square.getSquareType() == Square.SquareType.TRIPLE_LETTER) {
-                    letterValue *= 3;
+                    effectiveValue *= 3;
                 }
-                if (square.getSquareType() == Square.SquareType.DOUBLE_WORD || square.getSquareType() == Square.SquareType.CENTER) {
+
+                if (square.getSquareType() == Square.SquareType.DOUBLE_WORD ||
+                        square.getSquareType() == Square.SquareType.CENTER) {
                     wordMultiplier *= 2;
                 } else if (square.getSquareType() == Square.SquareType.TRIPLE_WORD) {
                     wordMultiplier *= 3;
                 }
             }
-            score += letterValue;
+
+            score += effectiveValue;
             if (isHorizontal) {
                 col++;
             } else {
                 row++;
             }
         }
+
         score *= wordMultiplier;
         if (word.length() == 7) {
             score += ScrabbleConstants.BINGO_BONUS;
         }
+
         return score;
     }
 

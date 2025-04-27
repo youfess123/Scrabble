@@ -1,7 +1,9 @@
 package edu.leicester.scrabble.model;
 
+import edu.leicester.scrabble.util.ScoreCalculator;
 import edu.leicester.scrabble.util.ScrabbleConstants;
-
+import edu.leicester.scrabble.util.WordValidator;
+import edu.leicester.scrabble.model.Dictionary;
 import java.awt.Point;
 import java.io.IOException;
 import java.io.InputStream;
@@ -231,51 +233,7 @@ public class Game {
     }
 
     private List<String> validateWords(Board tempBoard, Move move, List<Point> newTilePositions) {
-        List<String> formedWords = new ArrayList<>();
-
-        int row = move.getStartRow();
-        int col = move.getStartCol();
-        Move.Direction direction = move.getDirection();
-
-        String mainWord;
-        if (direction == Move.Direction.HORIZONTAL) {
-            mainWord = getWordAt(tempBoard, row, findWordStart(tempBoard, row, col, true), true);
-        } else {
-            mainWord = getWordAt(tempBoard, findWordStart(tempBoard, row, col, false), col, false);
-        }
-
-        if (mainWord.length() < 2) {
-            System.out.println("Invalid move: Main word is too short");
-            return formedWords;
-        }
-
-        if (!dictionary.isValidWord(mainWord)) {
-            System.out.println("Invalid move: Main word " + mainWord + " is not in dictionary");
-            return formedWords;
-        }
-
-        formedWords.add(mainWord);
-
-        for (Point p : newTilePositions) {
-            String crossWord;
-
-            if (direction == Move.Direction.HORIZONTAL) {
-                crossWord = getWordAt(tempBoard, findWordStart(tempBoard, p.x, p.y, false), p.y, false);
-            } else {
-                crossWord = getWordAt(tempBoard, p.x, findWordStart(tempBoard, p.x, p.y, true), true);
-            }
-
-            if (crossWord.length() >= 2) {
-                if (!dictionary.isValidWord(crossWord)) {
-                    System.out.println("Invalid move: Crossing word "+crossWord+" is not in dictionary");
-                    return new ArrayList<>();
-                }
-
-                formedWords.add(crossWord);
-            }
-        }
-
-        return formedWords;
+        return WordValidator.validateWords(tempBoard, move, newTilePositions,dictionary);
     }
 
     private int findWordStart(Board board, int row, int col, boolean isHorizontal) {
@@ -320,76 +278,12 @@ public class Game {
         return word.toString();
     }
 
+    // In Game.java, update the calculateMoveScore method:
+
+
     private int calculateMoveScore(Board board, Move move, List<Point> newTilePositions) {
-        int totalScore = 0;
-        List<String> formedWords = move.getFormedWords();
-
-        Set<Point> usedPremiumSquares = new HashSet<>();
-
-        for (String word : formedWords) {
-            int wordScore = 0;
-            int wordMultiplier = 1;
-
-            Point wordPosition = findWordPosition(board, word);
-            if (wordPosition == null) continue;
-
-            int startRow = wordPosition.x;
-            int startCol = wordPosition.y;
-            boolean isHorizontal = findWordOrientation(board, startRow, startCol, word);
-
-            int currentRow = startRow;
-            int currentCol = startCol;
-
-            for (int i = 0; i < word.length(); i++) {
-                Square square = board.getSquare(currentRow, currentCol);
-                Point currentPoint = new Point(currentRow, currentCol);
-                boolean isNewTile = newTilePositions.contains(currentPoint);
-
-                Tile tile = square.getTile();
-                int letterValue = tile.getValue();
-
-                if (isNewTile && !square.isSquareTypeUsed()) {
-                    if (square.getSquareType() == Square.SquareType.DOUBLE_LETTER) {
-                        letterValue *= 2;
-                    } else if (square.getSquareType() == Square.SquareType.TRIPLE_LETTER) {
-                        letterValue *= 3;
-                    }
-
-                    if (!usedPremiumSquares.contains(currentPoint)) {
-                        if (square.getSquareType() == Square.SquareType.DOUBLE_WORD ||
-                                square.getSquareType() == Square.SquareType.CENTER) {
-                            wordMultiplier *= 2;
-                            usedPremiumSquares.add(currentPoint);
-                        } else if (square.getSquareType() == Square.SquareType.TRIPLE_WORD) {
-                            wordMultiplier *= 3;
-                            usedPremiumSquares.add(currentPoint);
-                        }
-                    }
-                }
-
-                wordScore += letterValue;
-
-                if (isHorizontal) {
-                    currentCol++;
-                } else {
-                    currentRow++;
-                }
-            }
-
-            wordScore *= wordMultiplier;
-
-            totalScore += wordScore;
-
-            System.out.println("Word: " + word + ", Score: " + wordScore);
-        }
-
-        if (move.getTiles().size() == 7) {
-            totalScore += ScrabbleConstants.BINGO_BONUS;
-            System.out.println("Bingo bonus: " + ScrabbleConstants.BINGO_BONUS);
-        }
-
-        System.out.println("Total move score: " + totalScore);
-        return totalScore;
+        Set<Point> newPositionsSet = new HashSet<>(newTilePositions);
+        return ScoreCalculator.calculateMoveScore(move, board, move.getFormedWords(), newPositionsSet);
     }
 
     private Point findWordPosition(Board board, String word) {
