@@ -89,53 +89,7 @@ public class GADDAG {
         return words;
     }
 
-    public Set<String> getWordsFromPartial(String partialWord, String rack, boolean isPrefix) {
-        Set<String> validWords = new HashSet<>();
 
-        if (partialWord == null || partialWord.isEmpty() || rack == null) {
-            return validWords;
-        }
-
-        partialWord = partialWord.toUpperCase();
-        rack = rack.toUpperCase();
-
-        Map<Character, Integer> rackMap = new HashMap<>();
-        for (char c : rack.toCharArray()) {
-            rackMap.put(c, rackMap.getOrDefault(c, 0) + 1);
-        }
-
-        if (isPrefix) {
-            String path = partialWord + DELIMITER;
-            Node current = root;
-
-            for (char c : path.toCharArray()) {
-                current = current.getChild(c);
-                if (current == null) {
-                    return validWords;
-                }
-            }
-
-            StringBuilder wordBuilder = new StringBuilder(partialWord);
-            findSuffixes(current, wordBuilder, rackMap, validWords);
-        } else {
-            StringBuilder reversedPartial = new StringBuilder(partialWord).reverse();
-            String path = reversedPartial.toString() + DELIMITER;
-
-            Node current = root;
-
-            for (char c : path.toCharArray()) {
-                current = current.getChild(c);
-                if (current == null) {
-                    return validWords;
-                }
-            }
-
-            StringBuilder wordBuilder = new StringBuilder(partialWord);
-            findPrefixes(current, wordBuilder, rackMap, validWords);
-        }
-
-        return validWords;
-    }
 
     private void findSuffixes(Node node, StringBuilder wordBuilder, Map<Character, Integer> rack, Set<String> validWords) {
         if (node.isWord()) {

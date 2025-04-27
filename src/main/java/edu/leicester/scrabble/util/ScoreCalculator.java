@@ -7,11 +7,34 @@ import java.util.*;
 public class ScoreCalculator {
 
     /**
-     * Calculates score for a word
+     * Calculates the total score for a move
+     */
+    public static int calculateMoveScore(Move move, Board board, List<String> formedWords, Set<Point> newTilePositions) {
+        int totalScore = 0;
+
+        // Calculate score for each formed word
+        for (String word : formedWords) {
+            Point wordPos = WordValidator.findWordPosition(board, word);
+            if (wordPos == null) continue;
+
+            boolean isHorizontal = WordValidator.isWordHorizontal(board, word, wordPos);
+            int wordScore = calculateWordScore(word, wordPos.x, wordPos.y, isHorizontal, board, newTilePositions);
+            totalScore += wordScore;
+        }
+
+        // Add bingo bonus if used all 7 tiles
+        if (move.getTiles().size() == 7) {
+            totalScore += ScrabbleConstants.BINGO_BONUS;
+        }
+
+        return totalScore;
+    }
+
+    /**
+     * Calculates the score for a single word
      */
     public static int calculateWordScore(String word, int startRow, int startCol,
-                                         boolean isHorizontal, Board board,
-                                         Set<Point> newTilePositions) {
+                                         boolean isHorizontal, Board board, Set<Point> newTilePositions) {
         int score = 0;
         int wordMultiplier = 1;
         int row = startRow;
@@ -20,18 +43,22 @@ public class ScoreCalculator {
         for (int i = 0; i < word.length(); i++) {
             Square square = board.getSquare(row, col);
             Point currentPoint = new Point(row, col);
+            Tile tile = square.getTile();
 
-            int letterValue = square.getTile().getValue();
+            // Get letter value, accounting for blank tiles
+            int letterValue = tile.isBlank() ? 0 : tile.getValue();
+            int effectiveValue = letterValue;
 
-            // Apply letter multipliers for new tiles only
+            // Apply square multipliers only for newly placed tiles
             if (newTilePositions.contains(currentPoint) && !square.isSquareTypeUsed()) {
+                // Apply letter multipliers
                 if (square.getSquareType() == Square.SquareType.DOUBLE_LETTER) {
-                    letterValue *= 2;
+                    effectiveValue = letterValue * 2;
                 } else if (square.getSquareType() == Square.SquareType.TRIPLE_LETTER) {
-                    letterValue *= 3;
+                    effectiveValue = letterValue * 3;
                 }
 
-                // Collect word multipliers for new tiles only
+                // Collect word multipliers
                 if (square.getSquareType() == Square.SquareType.DOUBLE_WORD ||
                         square.getSquareType() == Square.SquareType.CENTER) {
                     wordMultiplier *= 2;
@@ -40,8 +67,9 @@ public class ScoreCalculator {
                 }
             }
 
-            score += letterValue;
+            score += effectiveValue;
 
+            // Move to next position
             if (isHorizontal) {
                 col++;
             } else {
@@ -50,61 +78,74 @@ public class ScoreCalculator {
         }
 
         // Apply word multiplier
-        score *= wordMultiplier;
-
-        return score;
+        return score * wordMultiplier;
     }
 
     /**
-     * Calculates total score for a move
+     * Calculate score for word placement and create a detailed score breakdown
      */
-    public static int calculateMoveScore(Move move, Board board, List<String> formedWords,
-                                         Set<Point> newTilePositions) {
-        int totalScore = 0;
+    public static String getScoreBreakdown(String word, int startRow, int startCol,
+                                           boolean isHorizontal, Board board, Set<Point> newTilePositions) {
+        StringBuilder breakdown = new StringBuilder();
+        int score = 0;
+        int wordMultiplier = 1;
+        int row = startRow;
+        int col = startCol;
 
-        for (String word : formedWords) {
-            Point wordPos = findWordPosition(board, word);
-            if (wordPos == null) continue;
+        breakdown.append("Score for '").append(word).append("': ");
 
-            boolean isHorizontal = isWordHorizontal(board, word, wordPos);
-            int wordScore = calculateWordScore(word, wordPos.x, wordPos.y, isHorizontal, board, newTilePositions);
-            totalScore += wordScore;
-        }
+        for (int i = 0; i < word.length(); i++) {
+            Square square = board.getSquare(row, col);
+            Point currentPoint = new Point(row, col);
+            Tile tile = square.getTile();
 
-        // Add bingo bonus
-        if (move.getTiles().size() == 7) {
-            totalScore += ScrabbleConstants.BINGO_BONUS;
-        }
+            int letterValue = tile.isBlank() ? 0 : tile.getValue();
+            int effectiveValue = letterValue;
 
-        return totalScore;
-    }
-
-    private static Point findWordPosition(Board board, String word) {
-        // Check horizontal words
-        for (int row = 0; row < Board.SIZE; row++) {
-            for (int col = 0; col < Board.SIZE; col++) {
-                String foundWord = BoardUtils.getWordAt(board, row, col, Move.Direction.HORIZONTAL);
-                if (foundWord.equals(word)) {
-                    return new Point(row, col);
+            // Apply multipliers only for newly placed tiles
+            if (newTilePositions.contains(currentPoint) && !square.isSquareTypeUsed()) {
+                if (square.getSquareType() == Square.SquareType.DOUBLE_LETTER) {
+                    effectiveValue = letterValue * 2;
+                    breakdown.append(tile.getLetter()).append("(").append(letterValue).append("×2) + ");
+                } else if (square.getSquareType() == Square.SquareType.TRIPLE_LETTER) {
+                    effectiveValue = letterValue * 3;
+                    breakdown.append(tile.getLetter()).append("(").append(letterValue).append("×3) + ");
+                } else {
+                    breakdown.append(tile.getLetter()).append("(").append(letterValue).append(") + ");
                 }
+
+                if (square.getSquareType() == Square.SquareType.DOUBLE_WORD ||
+                        square.getSquareType() == Square.SquareType.CENTER) {
+                    wordMultiplier *= 2;
+                } else if (square.getSquareType() == Square.SquareType.TRIPLE_WORD) {
+                    wordMultiplier *= 3;
+                }
+            } else {
+                breakdown.append(tile.getLetter()).append("(").append(letterValue).append(") + ");
+            }
+
+            score += effectiveValue;
+
+            if (isHorizontal) {
+                col++;
+            } else {
+                row++;
             }
         }
 
-        // Check vertical words
-        for (int col = 0; col < Board.SIZE; col++) {
-            for (int row = 0; row < Board.SIZE; row++) {
-                String foundWord = BoardUtils.getWordAt(board, row, col, Move.Direction.VERTICAL);
-                if (foundWord.equals(word)) {
-                    return new Point(row, col);
-                }
-            }
+        // Remove the trailing " + "
+        if (breakdown.length() > 3) {
+            breakdown.setLength(breakdown.length() - 3);
         }
 
-        return null;
-    }
+        int finalScore = score * wordMultiplier;
 
-    private static boolean isWordHorizontal(Board board, String word, Point position) {
-        String horizontalWord = BoardUtils.getWordAt(board, position.x, position.y, Move.Direction.HORIZONTAL);
-        return horizontalWord.equals(word);
+        if (wordMultiplier > 1) {
+            breakdown.append(" = ").append(score).append(" × ").append(wordMultiplier);
+        }
+
+        breakdown.append(" = ").append(finalScore);
+
+        return breakdown.toString();
     }
 }

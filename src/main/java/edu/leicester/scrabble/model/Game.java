@@ -1,15 +1,10 @@
 package edu.leicester.scrabble.model;
 
-import edu.leicester.scrabble.util.ScoreCalculator;
-import edu.leicester.scrabble.util.ScrabbleConstants;
-import edu.leicester.scrabble.util.WordValidator;
-import edu.leicester.scrabble.model.Dictionary;
+import edu.leicester.scrabble.util.*;
 import java.awt.Point;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-
-
 
 public class Game {
     private final Board board;
@@ -71,10 +66,8 @@ public class Game {
     }
 
     public void nextPlayer() {
-        int oldIndex = currentPlayerIndex;
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-        System.out.println("Player changed from index "+oldIndex+ " to "+currentPlayerIndex);
-        System.out.println("Current player is now: "+getCurrentPlayer().getName());
+        System.out.println("Current player is now: " + getCurrentPlayer().getName());
     }
 
     public Board getBoard() {
@@ -113,7 +106,6 @@ public class Game {
         }
 
         boolean success = false;
-        System.out.println("Executing move of type: "+ move.getType());
 
         try {
             success = switch (move.getType()) {
@@ -128,51 +120,78 @@ public class Game {
         }
 
         if (success) {
-            System.out.println("Move executed successfully");
             moveHistory.add(move);
 
             if (checkGameOver()) {
-                finaliseGameScore();
+                finalizeGameScore();
                 return true;
             }
 
             nextPlayer();
-            System.out.println("Turn passed to: " + getCurrentPlayer().getName());
-        } else {
-            System.out.println("Move execution failed");
         }
 
         return success;
     }
 
     private boolean executePlaceMove(Move move) {
-        if (!isValidPlaceMove(move)) {
+        // Validate the move
+        if (!WordValidator.isValidPlaceMove(move, board, dictionary)) {
             return false;
         }
 
-        int row = move.getStartRow();
-        int col = move.getStartCol();
         Player player = move.getPlayer();
-        List<Tile> tilesToPlace = move.getTiles();
-        Move.Direction direction = move.getDirection();
+        Board tempBoard = BoardUtils.copyBoard(board);
+        List<Point> newTilePositions = new ArrayList<>();
 
-        Board tempBoard = new Board();
+        // Place tiles on temp board to validate words and calculate score
+        placeTilesOnBoard(tempBoard, move, newTilePositions);
 
-        for (int r = 0; r < Board.SIZE; r++) {
-            for (int c = 0; c < Board.SIZE; c++) {
-                Square square = board.getSquare(r, c);
-                if (square.hasTile()) {
-                    tempBoard.placeTile(r, c, square.getTile());
-                }
+        // Validate words formed
+        List<String> formedWords = WordValidator.validateWords(tempBoard, move, newTilePositions, dictionary);
+
+        if (formedWords.isEmpty()) {
+            return false;
+        }
+
+        move.setFormedWords(formedWords);
+
+        // Calculate score
+        Set<Point> newPositionsSet = new HashSet<>(newTilePositions);
+        int score = ScoreCalculator.calculateMoveScore(move, tempBoard, formedWords, newPositionsSet);
+        move.setScore(score);
+
+        // Apply the move to the actual board
+        for (int i = 0; i < move.getTiles().size(); i++) {
+            Tile tile = move.getTiles().get(i);
+            if (i < newTilePositions.size()) {
+                Point position = newTilePositions.get(i);
+                board.placeTile(position.x, position.y, tile);
+                board.getSquare(position.x, position.y).useSquareType();
+                player.getRack().removeTile(tile);
             }
         }
 
-        List<Point> newTilePositions = new ArrayList<>();
+        player.addScore(score);
+        consecutivePasses = 0;
+        fillRack(player);
+
+        if (player.getRack().isEmpty() && tileBag.isEmpty()) {
+            player.addScore(EMPTY_RACK_BONUS);
+        }
+
+        return true;
+    }
+
+    private void placeTilesOnBoard(Board tempBoard, Move move, List<Point> newTilePositions) {
+        int row = move.getStartRow();
+        int col = move.getStartCol();
+        Move.Direction direction = move.getDirection();
 
         int currentRow = row;
         int currentCol = col;
 
-        for (Tile tile : tilesToPlace) {
+        for (Tile tile : move.getTiles()) {
+            // Skip over existing tiles
             while (currentRow < Board.SIZE && currentCol < Board.SIZE &&
                     tempBoard.getSquare(currentRow, currentCol).hasTile()) {
                 if (direction == Move.Direction.HORIZONTAL) {
@@ -193,176 +212,29 @@ public class Game {
                 }
             }
         }
-
-        List<String> formedWords = validateWords(tempBoard, move, newTilePositions);
-
-        if (formedWords.isEmpty()) {
-            return false;
-        }
-
-        move.setFormedWords(formedWords);
-
-        int score = calculateMoveScore(tempBoard, move, newTilePositions);
-        move.setScore(score);
-
-        for (int i = 0; i < tilesToPlace.size(); i++) {
-            Tile tile = tilesToPlace.get(i);
-            Point position = (i < newTilePositions.size()) ? newTilePositions.get(i) : null;
-
-            if (position != null) {
-                // Place the tile on the board
-                board.placeTile(position.x, position.y, tile);
-
-                board.getSquare(position.x, position.y).useSquareType();
-
-                player.getRack().removeTile(tile);
-            }
-        }
-
-        player.addScore(score);
-
-        consecutivePasses = 0;
-
-        fillRack(player);
-
-        if (player.getRack().isEmpty() && tileBag.isEmpty()) {
-            player.addScore(EMPTY_RACK_BONUS);
-        }
-
-        return true;
-    }
-
-    private List<String> validateWords(Board tempBoard, Move move, List<Point> newTilePositions) {
-        return WordValidator.validateWords(tempBoard, move, newTilePositions,dictionary);
-    }
-
-    private int findWordStart(Board board, int row, int col, boolean isHorizontal) {
-        int position = isHorizontal ? col : row;
-
-        while (position > 0) {
-            int prevPos = position - 1;
-            Square square = isHorizontal ? board.getSquare(row, prevPos) : board.getSquare(prevPos, col);
-
-            if (!square.hasTile()) {
-                break;
-            }
-            position = prevPos;
-        }
-
-        return position;
-    }
-
-    private String getWordAt(Board board, int row, int col, boolean isHorizontal) {
-        StringBuilder word = new StringBuilder();
-
-        int currentRow = row;
-        int currentCol = col;
-
-        // Collect letters until we reach an empty square or the board edge
-        while (currentRow < Board.SIZE && currentCol < Board.SIZE) {
-            Square square = board.getSquare(currentRow, currentCol);
-
-            if (!square.hasTile()) {
-                break;
-            }
-
-            word.append(square.getTile().getLetter());
-
-            if (isHorizontal) {
-                currentCol++;
-            } else {
-                currentRow++;
-            }
-        }
-
-        return word.toString();
-    }
-
-    // In Game.java, update the calculateMoveScore method:
-
-
-    private int calculateMoveScore(Board board, Move move, List<Point> newTilePositions) {
-        Set<Point> newPositionsSet = new HashSet<>(newTilePositions);
-        return ScoreCalculator.calculateMoveScore(move, board, move.getFormedWords(), newPositionsSet);
-    }
-
-    private Point findWordPosition(Board board, String word) {
-        // Check horizontal words
-        for (int row = 0; row < Board.SIZE; row++) {
-            for (int col = 0; col < Board.SIZE; col++) {
-                String foundWord = getWordAt(board, row, col, true);
-                if (foundWord.equals(word)) {
-                    return new Point(row, col);
-                }
-            }
-        }
-
-        for (int col = 0; col < Board.SIZE; col++) {
-            for (int row = 0; row < Board.SIZE; row++) {
-                String foundWord = getWordAt(board, row, col, false);
-                if (foundWord.equals(word)) {
-                    return new Point(row, col);
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private boolean findWordOrientation(Board board, int row, int col, String word) {
-        String horizontalWord = getWordAt(board, row, col, true);
-
-        return horizontalWord.equals(word);
     }
 
     private boolean executeExchangeMove(Move move) {
-        try {
-            Player player = move.getPlayer();
-            List<Tile> tilesToExchange = move.getTiles();
+        Player player = move.getPlayer();
+        List<Tile> tilesToExchange = move.getTiles();
 
-            if (tileBag.getTileCount() < 1) {
-                System.out.println("Not enough tiles in bag: " + tileBag.getTileCount());
-                return false;
-            }
-
-            System.out.println("Before removal - Rack size: " + player.getRack().size());
-            System.out.println("Tiles to exchange: " + tilesToExchange.size());
-
-            StringBuilder exchangeLog = new StringBuilder("Exchanging tiles: ");
-            for (Tile t : tilesToExchange) {
-                exchangeLog.append(t.getLetter()).append(" ");
-            }
-            System.out.println(exchangeLog.toString());
-
-            if (!player.getRack().removeTiles(tilesToExchange)) {
-                System.out.println("Failed to remove tiles from rack");
-                return false;
-            }
-
-            System.out.println("After removal - Rack size: " + player.getRack().size());
-
-            int numTilesToDraw = tilesToExchange.size();
-            List<Tile> newTiles = tileBag.drawTiles(numTilesToDraw);
-
-            System.out.println("Drew " + newTiles.size() + " new tiles");
-
-            int tilesAdded = player.getRack().addTiles(newTiles);
-
-            System.out.println("Added " + tilesAdded + " tiles to rack");
-
-            tileBag.returnTiles(tilesToExchange);
-
-            System.out.println("Returned " + tilesToExchange.size() + " tiles to bag");
-            System.out.println("After exchange - Rack size: " + player.getRack().size());
-
-            consecutivePasses = 0;
-
-            return true;
-        } catch (Exception e) {
-            System.err.println("Error in executeExchangeMove: " + e.getMessage());
-            e.printStackTrace();
+        if (tileBag.getTileCount() < 1) {
+            System.out.println("Not enough tiles in bag for exchange");
             return false;
         }
+
+        if (!player.getRack().removeTiles(tilesToExchange)) {
+            System.out.println("Failed to remove tiles from rack");
+            return false;
+        }
+
+        int numTilesToDraw = tilesToExchange.size();
+        List<Tile> newTiles = tileBag.drawTiles(numTilesToDraw);
+        player.getRack().addTiles(newTiles);
+        tileBag.returnTiles(tilesToExchange);
+
+        consecutivePasses = 0;
+        return true;
     }
 
     private boolean executePassMove(Move move) {
@@ -370,144 +242,8 @@ public class Game {
         return true;
     }
 
-    public boolean isValidPlaceMove(Move move) {
-        int startRow = move.getStartRow();
-        int startCol = move.getStartCol();
-        Move.Direction direction = move.getDirection();
-        List<Tile> tiles = move.getTiles();
-
-        if (tiles.isEmpty()) {
-            System.out.println("Invalid move: No tiles to place");
-            return false;
-        }
-
-        if (startRow < 0 || startRow >= Board.SIZE || startCol < 0 || startCol >= Board.SIZE) {
-            System.out.println("Invalid move: Starting position out of bounds");
-            return false;
-        }
-
-        if (board.isEmpty()) {
-            boolean touchesCenter = false;
-
-            if (direction == Move.Direction.HORIZONTAL) {
-                if (startRow == ScrabbleConstants.CENTER_SQUARE &&
-                        startCol <= ScrabbleConstants.CENTER_SQUARE &&
-                        startCol + tiles.size() > ScrabbleConstants.CENTER_SQUARE) {
-                    touchesCenter = true;
-                }
-            } else {
-                if (startCol == ScrabbleConstants.CENTER_SQUARE &&
-                        startRow <= ScrabbleConstants.CENTER_SQUARE &&
-                        startRow + tiles.size() > ScrabbleConstants.CENTER_SQUARE) {
-                    touchesCenter = true;
-                }
-            }
-
-            if (!touchesCenter) {
-                System.out.println("Invalid first move: Must cover center square");
-                return false;
-            }
-
-            return true;
-        }
-
-        Board tempBoard = new Board();
-
-        for (int r = 0; r < Board.SIZE; r++) {
-            for (int c = 0; c < Board.SIZE; c++) {
-                if (board.getSquare(r, c).hasTile()) {
-                    tempBoard.placeTile(r, c, board.getSquare(r, c).getTile());
-                }
-            }
-        }
-
-        int currentRow = startRow;
-        int currentCol = startCol;
-        boolean connectsToExisting = false;
-        List<Point> newTilePositions = new ArrayList<>();
-
-        for (Tile tile : tiles) {
-            while (currentRow < Board.SIZE && currentCol < Board.SIZE &&
-                    tempBoard.getSquare(currentRow, currentCol).hasTile()) {
-                if (direction == Move.Direction.HORIZONTAL) {
-                    currentCol++;
-                } else {
-                    currentRow++;
-                }
-            }
-
-            if (currentRow >= Board.SIZE || currentCol >= Board.SIZE) {
-                System.out.println("Invalid move: Placement extends beyond board");
-                return false;
-            }
-
-            tempBoard.placeTile(currentRow, currentCol, tile);
-            newTilePositions.add(new Point(currentRow, currentCol));
-
-            if (!connectsToExisting) {
-                connectsToExisting = hasAdjacentTile(currentRow, currentCol);
-            }
-
-            if (direction == Move.Direction.HORIZONTAL) {
-                currentCol++;
-            } else {
-                currentRow++;
-            }
-        }
-
-        if (!connectsToExisting) {
-            List<String> formedWords = validateWords(tempBoard, move, newTilePositions);
-
-            if (formedWords.isEmpty()) {
-                System.out.println("Invalid move: No valid words formed");
-                return false;
-            }
-
-            for (String word : formedWords) {
-                Point wordPos = findWordPosition(tempBoard, word);
-                if (wordPos == null) continue;
-
-                boolean isHorizontal = findWordOrientation(tempBoard, wordPos.x, wordPos.y, word);
-                int row = wordPos.x;
-                int col = wordPos.y;
-
-                for (int i = 0; i < word.length(); i++) {
-                    Point p = new Point(row, col);
-
-                    if (board.getSquare(row, col).hasTile() && !newTilePositions.contains(p)) {
-                        connectsToExisting = true;
-                        break;
-                    }
-
-                    if (isHorizontal) {
-                        col++;
-                    } else {
-                        row++;
-                    }
-                }
-
-                if (connectsToExisting) break;
-            }
-        }
-
-        if (!connectsToExisting) {
-            System.out.println("Invalid move: Does not connect to existing tiles");
-            return false;
-        }
-
-        return true;
-    }
-
-    private boolean hasAdjacentTile(int row, int col) {
-        if (row > 0 && board.getSquare(row - 1, col).hasTile()) return true;
-        if (row < Board.SIZE - 1 && board.getSquare(row + 1, col).hasTile()) return true;
-        if (col > 0 && board.getSquare(row, col - 1).hasTile()) return true;
-        if (col < Board.SIZE - 1 && board.getSquare(row, col + 1).hasTile()) return true;
-
-        return false;
-    }
-
     public boolean checkGameOver() {
+        // Check if any player is out of tiles
         for (Player player : players) {
             if (player.isOutOfTiles() && tileBag.isEmpty()) {
                 gameOver = true;
@@ -515,6 +251,7 @@ public class Game {
             }
         }
 
+        // Check for too many consecutive passes
         if (consecutivePasses >= players.size() * 2) {
             gameOver = true;
             return true;
@@ -523,8 +260,10 @@ public class Game {
         return false;
     }
 
-    private void finaliseGameScore() {
+    private void finalizeGameScore() {
         Player outPlayer = null;
+
+        // Find player who went out (if any)
         for (Player player : players) {
             if (player.isOutOfTiles()) {
                 outPlayer = player;
@@ -533,6 +272,7 @@ public class Game {
         }
 
         if (outPlayer != null) {
+            // Player who went out gets points from other players' racks
             int bonusPoints = 0;
             for (Player player : players) {
                 if (player != outPlayer) {
@@ -543,6 +283,7 @@ public class Game {
             }
             outPlayer.addScore(bonusPoints);
         } else {
+            // Game ended due to passes - everyone loses points for tiles in rack
             for (Player player : players) {
                 player.addScore(-player.getRackValue());
             }
