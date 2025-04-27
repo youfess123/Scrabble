@@ -95,11 +95,22 @@ public class RackView extends HBox {
 
             setPrefSize(ScrabbleConstants.TILE_SIZE, ScrabbleConstants.TILE_SIZE);
             setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, new CornerRadii(3), BorderWidths.DEFAULT)));
-            setBackground(new Background(new BackgroundFill(Color.BURLYWOOD, CornerRadii.EMPTY, Insets.EMPTY)));
+
+            // Use a different background color for blank tiles
+            if (tile.isBlank()) {
+                setBackground(new Background(new BackgroundFill(Color.LIGHTYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
+            } else {
+                setBackground(new Background(new BackgroundFill(Color.BURLYWOOD, CornerRadii.EMPTY, Insets.EMPTY)));
+            }
 
             letterLabel = new Label(String.valueOf(tile.getLetter()));
             letterLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
             letterLabel.setAlignment(Pos.CENTER);
+
+            // Special styling for blank tiles
+            if (tile.isBlank() && tile.getLetter() != '*') {
+                letterLabel.setTextFill(Color.BLUE);
+            }
 
             valueLabel = new Label(String.valueOf(tile.getValue()));
             valueLabel.setFont(Font.font("Arial", 10));
@@ -114,13 +125,41 @@ public class RackView extends HBox {
 
         private void setupEvents() {
             setOnMouseClicked(event -> {
-                controller.selectTileFromRack(index);
-                updateRack(); // Update the entire rack to reflect selection changes
+                if (tile.isBlank() && tile.getLetter() == '*') {
+                    // If it's an unused blank tile, show letter selection dialog
+                    BlankTileDialog dialog = new BlankTileDialog();
+                    char selectedLetter = dialog.showAndWait();
+                    if (selectedLetter != '\0') {
+                        // Create a new blank tile with the selected letter
+                        Tile blankTile = Tile.createBlankTile(selectedLetter);
+                        controller.setBlankTileLetter(index, blankTile);
+                        updateRack(); // Update to show the new letter
+                    }
+                } else {
+                    controller.selectTileFromRack(index);
+                    updateRack(); // Update the entire rack to reflect selection changes
+                }
             });
 
             setOnDragDetected(event -> {
                 // Only allow dragging if the tile is not already placed on the board
                 if (controller.isTileSelected(index)) {
+                    // If it's a blank tile that hasn't been assigned a letter, prompt for one
+                    if (tile.isBlank() && tile.getLetter() == '*') {
+                        BlankTileDialog dialog = new BlankTileDialog();
+                        char selectedLetter = dialog.showAndWait();
+                        if (selectedLetter != '\0') {
+                            // Create a new blank tile with the selected letter
+                            Tile blankTile = Tile.createBlankTile(selectedLetter);
+                            controller.setBlankTileLetter(index, blankTile);
+                            updateRack(); // Update to show the new letter
+                        } else {
+                            // User cancelled the dialog, don't start drag
+                            event.consume();
+                            return;
+                        }
+                    }
+
                     Dragboard db = startDragAndDrop(TransferMode.MOVE);
                     ClipboardContent content = new ClipboardContent();
                     content.putString(String.valueOf(index));
@@ -149,7 +188,11 @@ public class RackView extends HBox {
 
         public void deselect() {
             isSelected = false;
-            setBackground(new Background(new BackgroundFill(Color.BURLYWOOD, CornerRadii.EMPTY, Insets.EMPTY)));
+            if (tile.isBlank()) {
+                setBackground(new Background(new BackgroundFill(Color.LIGHTYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
+            } else {
+                setBackground(new Background(new BackgroundFill(Color.BURLYWOOD, CornerRadii.EMPTY, Insets.EMPTY)));
+            }
             setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, new CornerRadii(3), BorderWidths.DEFAULT)));
         }
     }

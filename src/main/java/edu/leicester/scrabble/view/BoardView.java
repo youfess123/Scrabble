@@ -67,6 +67,7 @@ public class BoardView extends GridPane {
         private final int row;
         private final int col;
         private final Label label;
+        private final Label valueLabel; // Label to show tile point value
         private final Label premiumLabel;
         private boolean isTemporaryTile = false;
 
@@ -82,11 +83,18 @@ public class BoardView extends GridPane {
             label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
             label.setAlignment(Pos.CENTER);
 
+            valueLabel = new Label(); // Label for tile value
+            valueLabel.setFont(Font.font("Arial", 8));
+            valueLabel.setTextFill(Color.BLACK);
+            valueLabel.setAlignment(Pos.BOTTOM_RIGHT);
+            valueLabel.setTranslateX(10);
+            valueLabel.setTranslateY(12);
+
             premiumLabel = new Label();
             premiumLabel.setFont(Font.font("Arial", 10));
             premiumLabel.setAlignment(Pos.CENTER);
 
-            getChildren().addAll(premiumLabel, label);
+            getChildren().addAll(premiumLabel, label, valueLabel);
             setAlignment(Pos.CENTER);
 
             setupDropTarget();
@@ -99,7 +107,18 @@ public class BoardView extends GridPane {
                 Tile tempTile = controller.getTemporaryTileAt(row, col);
                 if (tempTile != null) {
                     label.setText(String.valueOf(tempTile.getLetter()));
-                    label.setTextFill(Color.BLACK);
+
+                    // Show point value for temporary tile
+                    valueLabel.setText(String.valueOf(tempTile.getValue()));
+
+                    // Special styling for blank tiles
+                    if (tempTile.isBlank()) {
+                        label.setTextFill(Color.BLUE);
+                        valueLabel.setText("0");
+                    } else {
+                        label.setTextFill(Color.BLACK);
+                    }
+
                     label.setStyle("-fx-background-color: #FFAA00; -fx-padding: 5; -fx-background-radius: 3;");
                     premiumLabel.setText("");
                     setBackground(new Background(new BackgroundFill(Color.LIGHTYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
@@ -111,12 +130,24 @@ public class BoardView extends GridPane {
             if (square.hasTile()) {
                 Tile tile = square.getTile();
                 label.setText(String.valueOf(tile.getLetter()));
-                label.setTextFill(Color.BLACK);
+
+                // Show point value for placed tile
+                valueLabel.setText(String.valueOf(tile.getValue()));
+
+                // Special styling for blank tiles
+                if (tile.isBlank()) {
+                    label.setTextFill(Color.BLUE);
+                    valueLabel.setText("0");
+                } else {
+                    label.setTextFill(Color.BLACK);
+                }
+
                 label.setStyle("-fx-background-color: #CD7F32; -fx-padding: 5; -fx-background-radius: 3;");
                 premiumLabel.setText("");
                 setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(0.5))));
             } else {
                 label.setText("");
+                valueLabel.setText("");
                 label.setStyle("");
                 setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(0.5))));
                 switch (square.getSquareType()) {

@@ -880,6 +880,26 @@ public class GameController {
         }
     }
 
+    public void setBlankTileLetter(int rackIndex, Tile blankTile) {
+        Player currentPlayer = game.getCurrentPlayer();
+        Rack rack = currentPlayer.getRack();
+
+        if (rackIndex < 0 || rackIndex >= rack.size()) {
+            return;
+        }
+
+        Tile currentTile = rack.getTile(rackIndex);
+        if (!currentTile.isBlank()) {
+            return; // Only allow changing blank tiles
+        }
+
+        // Replace the blank tile in the rack with the assigned letter
+        rack.removeTile(currentTile);
+        rack.addTile(blankTile);
+
+        updateRack();
+    }
+
     public Board getBoard() {
         return game.getBoard();
     }
